@@ -17,7 +17,7 @@ from snakemake_interface_software_deployment_plugins.settings import (
 from snakemake_software_deployment_plugin_container import (
     ContainerSettings,
     ContainerSpec,
-    ContainerEnv
+    ContainerEnv,
 )
 
 # There can be multiple subclasses of SoftwareDeploymentProviderBase here.
@@ -58,7 +58,9 @@ def is_podman_available():
     return shutil.which("podman") is not None
 
 
-@pytest.mark.skipif(not is_podman_available(), reason="podman not available on the system")
+@pytest.mark.skipif(
+    not is_podman_available(), reason="podman not available on the system"
+)
 class TestPodmanContainer(TestSoftwareDeploymentBase):
     __test__ = True  # activate automatic testing
 

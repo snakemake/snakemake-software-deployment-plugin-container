@@ -167,12 +167,12 @@ class ContainerEnv(EnvBase):
 
         template = (
             "{service} run"
-            " --rm"                    # Remove container after execution
-            " -w {workdir}"            # Working directory inside container
+            " --rm"  # Remove container after execution
+            " -w {workdir}"  # Working directory inside container
             " -v {hostdir}:{workdir}"  # Mount host directory to container
-            " {image_id}"          # Container image
-            " {shell}"                 # Shell executable
-            " -c '{cmd}'"              # The command to execute
+            " {image_id}"  # Container image
+            " {shell}"  # Shell executable
+            " -c '{cmd}'"  # The command to execute
         )
 
         decorated_cmd = template.format(
