@@ -1,4 +1,8 @@
 from typing import Optional, Type
+
+import pytest
+import shutil
+
 from snakemake_interface_software_deployment_plugins.tests import (
     TestSoftwareDeploymentBase,
 )
@@ -16,12 +20,13 @@ from snakemake_software_deployment_plugin_container import (
     ContainerEnv
 )
 
-
 # There can be multiple subclasses of SoftwareDeploymentProviderBase here.
 # This way, you can implement multiple test scenarios.
 # For each subclass, the test suite tests the environment activation and execution
 # within, and, if applicable, environment deployment and archiving.
-class TestUDockerSoftwareDeployment(TestSoftwareDeploymentBase):
+
+
+class TestUDockerContainer(TestSoftwareDeploymentBase):
     __test__ = True  # activate automatic testing
 
     test_container = "alpine:latest"
@@ -50,8 +55,13 @@ class TestUDockerSoftwareDeployment(TestSoftwareDeploymentBase):
         return "/bin/true"
 
 
-# TODO: should skip this test if podman not present in the host
-class TestPodmanSoftwareDeployment(TestSoftwareDeploymentBase):
+# Helper function to check if podman is available
+def is_podman_available():
+    return shutil.which("podman") is not None
+
+
+@pytest.mark.skipif(not is_podman_available(), reason="podman not available on the system")
+class TestPodmanContainer(TestSoftwareDeploymentBase):
     __test__ = True  # activate automatic testing
 
     test_container = "alpine:latest"

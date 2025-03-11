@@ -85,6 +85,8 @@ class ContainerSpec(EnvSpecBase):
     # the attribute EnvSpecSourceFile.path_or_uri (of type str) can be used to show
     # the original value passed to the EnvSpec.
 
+    # TODO: image_uri should be populated from the container keyword (via whatever mechanism is exposing)
+    # the plugin to the software deployment registry.
     image_uri: str
 
     @classmethod
@@ -93,6 +95,9 @@ class ContainerSpec(EnvSpecBase):
         # environment spec. These are used for hashing and equality comparison.
         # For example, the name of the env or the path to the environment definition
         # file or the URI of the container, whatever this plugin uses.
+
+        # TODO: might want to inspect the image and the the hash of the rootfs
+        # TODO: for better results, add image_hash
         return ["image_uri"]
 
     @classmethod
@@ -112,8 +117,17 @@ class ContainerSpec(EnvSpecBase):
 # and the respective base classes.
 # All errors should be wrapped with snakemake-interface-common.errors.WorkflowError
 class ContainerEnv(EnvBase):
-    # TODO: consider if this is deployable / archivable
+    # TODO: decide if containers are deployable / archivable and add the base images here.
+    # Deployable: can we fetch the image and create a local container?
+    # Archiveable: can we export the container to a tarball?
     # , DeployableEnvBase, ArchiveableEnvBase):
+
+    # image_repo is the de-referenced repository from where the image was obtained
+    image_repo: str
+
+    # image_hash is a hash of the image that can be used to identify it
+    # (TODO: which hash to use, exactly, from the info that we have?)
+    image_hash: str
 
     def __post_init__(self) -> None:
         self.check()
@@ -154,9 +168,12 @@ class ContainerEnv(EnvBase):
         service = self.settings.kind
 
         # TODO add options here (workdir, volumes, user etc)
-        #
         cmd = cmd.replace("'", r"'\''")
-        decorated_cmd = f"{service} run {container_id} /bin/sh -c '{cmd}'"
+
+        # TODO: review this
+        # for simplicity we're removing the containers each time, but we could
+        # reuse the container if we wanted to (and then remove it at the end)
+        decorated_cmd = f"{service} run --rm {container_id} /bin/sh -c '{cmd}'"
 
         return decorated_cmd
 
