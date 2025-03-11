@@ -1,0 +1,28 @@
+[project]
+name = "snakemake-software-deployment-plugin-container"
+version = "0.1.0"
+description = ""
+readme = "README.md"
+requires-python = ">=3.11,<4.0"
+dependencies = ["snakemake-interface-common (>=1.17.4,<2.0.0)", "snakemake-interface-software-deployment-plugins (>=0.6.1,<0.7.0)"]
+repository = "https://github.com/btraven00/snakemake-software-deployment-plugin-container"
+documentation = "https://snakemake.github.io/snakemake-plugin-catalog/plugins/software-deployment/container.html"
+[[project.authors]]
+name = "ben carrillo"
+email = "ben.uzh@pm.me"
+
+[build-system]
+requires = [ "poetry-core>=2.0.0,<3.0.0",]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+[[tool.poetry.packages]]
+include = "snakemake_software_deployment_plugin_container"
+from = "src"
+
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.9.10"
+coverage = "^7.6.12"
+pytest = "^8.3.5"
+
