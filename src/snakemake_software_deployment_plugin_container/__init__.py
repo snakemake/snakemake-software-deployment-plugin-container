@@ -9,8 +9,6 @@ from snakemake_interface_software_deployment_plugins.settings import (
 )
 from snakemake_interface_software_deployment_plugins import (
     EnvBase,
-    # DeployableEnvBase,
-    # ArchiveableEnvBase,
     EnvSpecBase,
     SoftwareReport,
 )
@@ -48,22 +46,7 @@ class ContainerSettings(SoftwareDeploymentSettingsBase):
         default="udocker",
         metadata={
             "help": "Container kind (udocker by default)",
-            # Optionally request that setting is also available for specification
-            # via an environment variable. The variable will be named automatically as
-            # SNAKEMAKE_<storage-plugin-name>_<param-name>, all upper case.
-            # This mechanism should only be used for passwords, usernames, and other
-            # credentials.
-            # For other items, we rather recommend to let people use a profile
-            # for setting defaults
-            # (https://snakemake.readthedocs.io/en/stable/executing/cli.html#profiles).
             "env_var": False,
-            # Optionally specify a function that parses the value given by the user.
-            # This is useful to create complex types from the user input.
-            # "parse_func": ...,
-            # If a parse_func is specified, you also have to specify an unparse_func
-            # that converts the parsed value back to a string.
-            # "unparse_func": ...,
-            # Optionally specify that setting is required when the executor is in use.
             "required": False,
         },
     )
@@ -93,23 +76,10 @@ class ContainerSpec(EnvSpecBase):
 
     @classmethod
     def identity_attributes(cls) -> Iterable[str]:
-        # Yield the attributes of this subclass that uniquely identify the
-        # environment spec. These are used for hashing and equality comparison.
-        # For example, the name of the env or the path to the environment definition
-        # file or the URI of the container, whatever this plugin uses.
-
-        # TODO: might want to inspect the image and the the hash of the rootfs
-        # TODO: for better results, add image_hash
         return ["image_uri"]
 
     @classmethod
     def source_path_attributes(cls) -> Iterable[str]:
-        # Return iterable of attributes of the subclass that represent paths that are
-        # supposed to be interpreted as being relative to the defining rule.
-        # For example, this would be attributes pointing to conda environment files.
-        # Return empty list if no such attributes exist.
-        # TODO I *think* source_path to be an abstraction that does not apply to containers
-        # but maybe it can be stretched.
         return ()
 
 
@@ -119,17 +89,11 @@ class ContainerSpec(EnvSpecBase):
 # and the respective base classes.
 # All errors should be wrapped with snakemake-interface-common.errors.WorkflowError
 class ContainerEnv(EnvBase):
-    # TODO: decide if containers are deployable / archivable and add the base images here.
-    # does it make sense? Right now I'm not reusing any containers
-    # Deployable: can we fetch the image and create a local container?
-    # Archiveable: can we export the container to a tarball?
-    # , DeployableEnvBase, ArchiveableEnvBase):
-
     # image_repo is the de-referenced repository from where the image was obtained
     image_repo: str
 
     # image_hash is a hash of the image that can be used to identify it
-    # (TODO: which hash to use, exactly, from the info that we have?)
+    # TODO: populate it *after* fetching/execution
     image_hash: str
 
     def __post_init__(self) -> None:
@@ -203,49 +167,4 @@ class ContainerEnv(EnvBase):
         # return the container URI as a "software".
         # Return an empty tuple () if no software can be reported.
         # TODO: implement. get container URI + hash
-        # Ideally, could peek inside the container to get the installed software (write util that we can
-        # use for all container types)
         return ()
-
-    # The methods below are optional. Remove them if not needed and adjust the
-    # base classes above.
-
-    async def deploy(self) -> None:
-        # Remove method if not deployable!
-        # Deploy the environment to self.deployment_path, using self.spec
-        # (the EnvSpec object).
-
-        # When issuing shell commands, the environment should use
-        # self.run_cmd(cmd: str) -> subprocess.CompletedProcess in order to ensure that
-        # it runs within eventual parent environments (e.g. a container or an env
-        # module).
-        # TODO - implement
-        pass
-
-    def is_deployment_path_portable(self) -> bool:
-        # Remove method if not deployable!
-        # Return True if the deployment is portable, i.e. can be moved to a
-        # different location without breaking the environment. Return False otherwise.
-        # For example, with conda, environments are not portable in that sense (cannot
-        # be moved around, because deployed packages contain hardcoded absolute
-        # RPATHs).
-        return True
-
-    def remove(self) -> None:
-        # Remove method if not deployable!
-        # Remove the deployed environment from self.deployment_path and perform
-        # any additional cleanup.
-        # TODO - remove container?
-        pass
-
-    async def archive(self) -> None:
-        # Remove method if not archiveable!
-        # Archive the environment to self.archive_path.
-
-        # When issuing shell commands, the environment should use
-        # self.run_cmd(cmd: str) -> subprocess.CompletedProcess in order to ensure that
-        # it runs within eventual parent environments (e.g. a container or an env
-        # module).
-        # TODO: implement
-        # `udocker export <container_id> | tar -'
-        pass
