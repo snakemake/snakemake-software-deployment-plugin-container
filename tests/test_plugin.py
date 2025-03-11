@@ -45,8 +45,6 @@ class TestUDockerContainer(TestSoftwareDeploymentBase):
     def get_software_deployment_provider_settings(
         self,
     ) -> Optional[SoftwareDeploymentSettingsBase]:
-        # If your plugin has settings, return a valid settings object here.
-        # Otherwise, return None.
         return ContainerSettings(kind=self.kind)
 
     def get_test_cmd(self) -> str:
@@ -80,11 +78,17 @@ class TestPodmanContainer(TestSoftwareDeploymentBase):
     def get_software_deployment_provider_settings(
         self,
     ) -> Optional[SoftwareDeploymentSettingsBase]:
-        # If your plugin has settings, return a valid settings object here.
-        # Otherwise, return None.
         return ContainerSettings(kind=self.kind)
 
     def get_test_cmd(self) -> str:
         # Return a test command that should be executed within the environment
         # with exit code 0 (i.e. without error).
         return "/bin/true"
+
+
+# Test that the  container is outputting something useful at all
+"""
+sp.run(
+    decorated_cmd, shell=True, executable=self.shell_executable
+).returncode
+"""

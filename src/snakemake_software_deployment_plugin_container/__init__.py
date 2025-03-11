@@ -15,17 +15,20 @@ from snakemake_interface_software_deployment_plugins import (
     SoftwareReport,
 )
 from shutil import which
+from os import getcwd
 
 # Raise errors that will not be handled within this plugin but thrown upwards to
 # Snakemake and the user as WorkflowError.
 from snakemake_interface_common.exceptions import WorkflowError  # noqa: F401
 
-VALID_CONTAINERS = ["udocker", "podman"]
-
+# The mountpoint for the Snakemake working directory inside the container.
 SNAKEMAKE_MOUNTPOINT = "/mnt/snakemake"
 
 UDOCKER = "udocker"
 PODMAN = "podman"
+
+# We only support these containers in this plugin for now.
+VALID_CONTAINERS = [UDOCKER, PODMAN]
 
 # Optional:
 # Define settings for your storage plugin (e.g. host url, credentials).
@@ -61,8 +64,7 @@ class ContainerSettings(SoftwareDeploymentSettingsBase):
             # that converts the parsed value back to a string.
             # "unparse_func": ...,
             # Optionally specify that setting is required when the executor is in use.
-            "required": True,
-            # Optionally specify multiple args with "nargs": "+"
+            "required": False,
         },
     )
 
@@ -106,7 +108,7 @@ class ContainerSpec(EnvSpecBase):
         # supposed to be interpreted as being relative to the defining rule.
         # For example, this would be attributes pointing to conda environment files.
         # Return empty list if no such attributes exist.
-        # XXX I consider source_path to be an abstraction that does not apply to containers
+        # TODO I *think* source_path to be an abstraction that does not apply to containers
         # but maybe it can be stretched.
         return ()
 
@@ -118,6 +120,7 @@ class ContainerSpec(EnvSpecBase):
 # All errors should be wrapped with snakemake-interface-common.errors.WorkflowError
 class ContainerEnv(EnvBase):
     # TODO: decide if containers are deployable / archivable and add the base images here.
+    # does it make sense? Right now I'm not reusing any containers
     # Deployable: can we fetch the image and create a local container?
     # Archiveable: can we export the container to a tarball?
     # , DeployableEnvBase, ArchiveableEnvBase):
@@ -160,20 +163,26 @@ class ContainerEnv(EnvBase):
         return True
 
     def decorate_shellcmd(self, cmd: str) -> str:
-        # The command needs to be wrapped to run inside the container
+        # TODO pass more options here (extra mount volumes, user etc)
 
-        # Using self.spec.image_uri for the container ID/hash
-        container_id = self.spec.image_uri
+        template = (
+            "{service} run"
+            " --rm"                    # Remove container after execution
+            " -w {workdir}"            # Working directory inside container
+            " -v {hostdir}:{workdir}"  # Mount host directory to container
+            " {image_id}"          # Container image
+            " {shell}"                 # Shell executable
+            " -c '{cmd}'"              # The command to execute
+        )
 
-        service = self.settings.kind
-
-        # TODO add options here (workdir, volumes, user etc)
-        cmd = cmd.replace("'", r"'\''")
-
-        # TODO: review this
-        # for simplicity we're removing the containers each time, but we could
-        # reuse the container if we wanted to (and then remove it at the end)
-        decorated_cmd = f"{service} run --rm {container_id} /bin/sh -c '{cmd}'"
+        decorated_cmd = template.format(
+            service=self.settings.kind,
+            workdir=SNAKEMAKE_MOUNTPOINT,
+            hostdir=repr(getcwd()),  # TODO: allow to override
+            image_id=self.spec.image_uri,
+            shell="/bin/sh",
+            cmd=cmd.replace("'", r"'\''"),
+        )
 
         return decorated_cmd
 
