@@ -9,8 +9,8 @@ from snakemake_interface_software_deployment_plugins.settings import (
 )
 from snakemake_interface_software_deployment_plugins import (
     EnvBase,
-    DeployableEnvBase,
-    ArchiveableEnvBase,
+    # DeployableEnvBase,
+    # ArchiveableEnvBase,
     EnvSpecBase,
     SoftwareReport,
 )
