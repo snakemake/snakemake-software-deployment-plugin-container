@@ -238,7 +238,19 @@ files = [
 argparse-dataclass = ">=2.0.0,<3.0.0"
 snakemake-interface-common = ">=1.17.4,<2.0.0"
 
+[[package]]
+name = "udocker"
+version = "1.3.17"
+description = "A basic user tool to execute simple docker         containers in batch or interactive systems without root privileges"
+optional = false
+python-versions = "*"
+groups = ["main", "test"]
+files = [
+    {file = "udocker-1.3.17-py2.py3-none-any.whl", hash = "sha256:fd6589de0f3af7c1cd6a29554f2c00f2ef1fbd91da184ca30f8cea1eb42bcd2b"},
+    {file = "udocker-1.3.17.tar.gz", hash = "sha256:f7f4d0cbd8b4efc93584629435808b95fc46c3c536839e3b773873d23a9f2f59"},
+]
+
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<4.0"
-content-hash = "64a89a63ceeb7cbd39b1c37a7703ce16d1c1d30cc46120792e116f5100640bec"
+content-hash = "e99b79857532a124e2e6ba2402f8ce5034f4bd6968437a5829493ca45c913e5f"
