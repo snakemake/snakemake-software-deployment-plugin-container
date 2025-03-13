@@ -12,38 +12,30 @@ from snakemake_interface_software_deployment_plugins import (
     EnvSpecBase,
     SoftwareReport,
 )
-from shutil import which
-from os import getcwd
-
 # Raise errors that will not be handled within this plugin but thrown upwards to
 # Snakemake and the user as WorkflowError.
 from snakemake_interface_common.exceptions import WorkflowError  # noqa: F401
+from snakemake_interface_common.settings import SettingsEnumBase
+
+from shutil import which
+from os import getcwd
+
 
 # The mountpoint for the Snakemake working directory inside the container.
 SNAKEMAKE_MOUNTPOINT = "/mnt/snakemake"
 
-UDOCKER = "udocker"
-PODMAN = "podman"
 
-# We only support these containers in this plugin for now.
-VALID_CONTAINERS = [UDOCKER, PODMAN]
-
-# Optional:
-# Define settings for your storage plugin (e.g. host url, credentials).
-# They will occur in the Snakemake CLI as --sdm-<plugin-name>-<param-name>
-# Make sure that all defined fields are 'Optional' and specify a default value
-# of None or anything else that makes sense in your case.
-# Note that we allow storage plugin settings to be tagged by the user. That means,
-# that each of them can be specified multiple times (an implicit nargs=+), and
-# the user can add a tag in front of each value (e.g. tagname1:value1 tagname2:value2).
-# This way, a storage plugin can be used multiple times within a workflow with different
-# settings.
+# ContainerType is an enum that defines the different container types we support.
+# If adding new ones, make sure the choice is the same as the command name.
+class ContainerType(SettingsEnumBase):
+    UDOCKER = 0
+    PODMAN = 1
 
 
 @dataclass
 class ContainerSettings(SoftwareDeploymentSettingsBase):
-    kind: Optional[str] = field(
-        default="udocker",
+    kind: Optional[ContainerType] = field(
+        default=ContainerType.UDOCKER,
         metadata={
             "help": "Container kind (udocker by default)",
             "env_var": False,
@@ -54,23 +46,7 @@ class ContainerSettings(SoftwareDeploymentSettingsBase):
 
 @dataclass
 class ContainerSpec(EnvSpecBase):
-    # This class should implement something that describes an existing or to be created
-    # environment.
-    # It will be automatically added to the environment object when the environment is
-    # created or loaded and is available there as attribute self.spec.
-    # Use either __init__ with type annotations or dataclass attributes to define the
-    # spec.
-    # Any attributes that shall hold paths that are interpreted as relative to the
-    # workflow source (e.g. the path to an environment definition file), have to be
-    # defined as snakemake_interface_software_deployment_plugins.EnvSpecSourceFile.
-    # The reason is that Snakemake internally has to convert them from potential
-    # URLs or filesystem paths to cached versions.
-    # In the Env class below, they have to be accessed as EnvSpecSourceFile.cached
-    # (of type Path), when checking for existence. In case errors shall be thrown,
-    # the attribute EnvSpecSourceFile.path_or_uri (of type str) can be used to show
-    # the original value passed to the EnvSpec.
-
-    # TODO: image_uri should be populated from the container keyword (via whatever mechanism is exposing)
+    # TODO: when integrating this plugin, image_uri should be populated from the container keyword (via whatever mechanism is exposing)
     # the plugin to the software deployment registry.
     image_uri: str
 
@@ -83,10 +59,6 @@ class ContainerSpec(EnvSpecBase):
         return ()
 
 
-# Required:
-# Implementation of an environment object.
-# If your environment cannot be archived or deployed, remove the respective methods
-# and the respective base classes.
 # All errors should be wrapped with snakemake-interface-common.errors.WorkflowError
 class ContainerEnv(EnvBase):
     # image_repo is the de-referenced repository from where the image was obtained
@@ -108,26 +80,25 @@ class ContainerEnv(EnvBase):
     def _check_service(self) -> bool:
         if self.spec.image_uri == "":
             raise WorkflowError("Image URI is empty")
-        kind = self.settings.kind
-        if kind not in VALID_CONTAINERS:
+
+        # TODO: if we don't get the tag, we should assume :latest
+
+        if self.settings.kind not in ContainerType.all():
             raise WorkflowError("Invalid container kind")
-        if kind == UDOCKER:
-            self._check_udocker()
-        elif kind == PODMAN:
-            self._check_podman()
 
-    def _check_udocker(self):
-        if which(UDOCKER) is None:
-            raise WorkflowError(f"{UDOCKER} is not available in PATH")
-        return True
+        # this assumes that the choices are the same as the command names. If
+        # this is not the case, we need to add a mapping.
+        self._check_executable()
 
-    def _check_podman(self):
-        if which(PODMAN) is None:
-            raise WorkflowError(f"{PODMAN} is not available in PATH")
+    def _check_executable(self):
+        cmd = self.settings.kind.item_to_choice()
+        if which(cmd) is None:
+            raise WorkflowError(f"{cmd} is not available in PATH")
         return True
 
     def decorate_shellcmd(self, cmd: str) -> str:
         # TODO pass more options here (extra mount volumes, user etc)
+        # TODO need to mount .cache too
 
         template = (
             "{service} run"
@@ -155,7 +126,6 @@ class ContainerEnv(EnvBase):
         # could potentially contain a different set of software (in terms of versions or
         # packages). Use self.spec (containing the corresponding EnvSpec object)
         # to determine the hash.
-        # TODO - unsure
         hash_object.update(...)
 
     def report_software(self) -> Iterable[SoftwareReport]:
@@ -166,5 +136,7 @@ class ContainerEnv(EnvBase):
         # hide those for clarity. In case of containers, it is also valid to
         # return the container URI as a "software".
         # Return an empty tuple () if no software can be reported.
-        # TODO: implement. get container URI + hash
+        # TODO: implement.
+        # Get container URI + hash (assuming we've already executd and fetched the image,
+        # so that we can get the hash for the image plus the tag)
         return ()

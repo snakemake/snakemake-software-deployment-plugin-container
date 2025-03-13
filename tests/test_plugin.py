@@ -18,6 +18,7 @@ from snakemake_software_deployment_plugin_container import (
     ContainerSettings,
     ContainerSpec,
     ContainerEnv,
+    ContainerType
 )
 
 # There can be multiple subclasses of SoftwareDeploymentProviderBase here.
@@ -30,7 +31,7 @@ class TestUDockerContainer(TestSoftwareDeploymentBase):
     __test__ = True  # activate automatic testing
 
     test_container = "alpine:latest"
-    kind = "udocker"
+    kind = ContainerType.UDOCKER
 
     def get_env_spec(self) -> EnvSpecBase:
         # If the software deployment provider does not support deployable environments,
@@ -65,7 +66,7 @@ class TestPodmanContainer(TestSoftwareDeploymentBase):
     __test__ = True  # activate automatic testing
 
     test_container = "alpine:latest"
-    kind = "podman"
+    kind = ContainerType.PODMAN
 
     def get_env_spec(self) -> EnvSpecBase:
         # If the software deployment provider does not support deployable environments,
