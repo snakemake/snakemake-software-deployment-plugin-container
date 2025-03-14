@@ -22,3 +22,8 @@ having to do with reproducibility. So, it's a good idea to specify a tag.
 
 - Work in progress. The plugin conforms to the current software-deployment interface specification, and it has passing tests.
 - Will revisit when further work is done in snakemake core to allow a more reusable integration of deployment plugins.
+
+## TODO
+
+- [ ] Add support for apptainer
+- [ ] Implement repot_sofware method with container URI *and* the resolved hash of the image.
