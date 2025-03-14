@@ -2,8 +2,13 @@ __author__ = "ben carrillo"
 __copyright__ = "Copyright 2025, ben carrillo"
 __email__ = "ben.uzh@pm.me"
 __license__ = "MIT"
+import os.path
 from dataclasses import dataclass, field
+from os import getcwd
+from shutil import which
 from typing import Iterable, Optional
+
+from snakemake.common import get_appdirs
 from snakemake_interface_software_deployment_plugins.settings import (
     SoftwareDeploymentSettingsBase,
 )
@@ -17,9 +22,6 @@ from snakemake_interface_software_deployment_plugins import (
 # Snakemake and the user as WorkflowError.
 from snakemake_interface_common.exceptions import WorkflowError  # noqa: F401
 from snakemake_interface_common.settings import SettingsEnumBase
-
-from shutil import which
-from os import getcwd
 
 
 # The mountpoint for the Snakemake working directory inside the container.
@@ -99,13 +101,19 @@ class ContainerEnv(EnvBase):
 
     def decorate_shellcmd(self, cmd: str) -> str:
         # TODO pass more options here (extra mount volumes, user etc)
-        # TODO need to mount .cache too
+
+        hostcache = os.path.join(get_appdirs().user_cache_dir, "snakemake/source-cache")
+        containercache = os.path.join(
+            SNAKEMAKE_MOUNTPOINT, ".cache/snakemake/source-cache"
+        )
 
         template = (
             "{service} run"
             " --rm"  # Remove container after execution
+            " -e HOME={workdir}"  # Set HOME to working directory
             " -w {workdir}"  # Working directory inside container
             " -v {hostdir}:{workdir}"  # Mount host directory to container
+            " -v {hostcache}:{containercache}"  # Mount host cache to container
             " {image_id}"  # Container image
             " {shell}"  # Shell executable
             " -c '{cmd}'"  # The command to execute
@@ -115,6 +123,8 @@ class ContainerEnv(EnvBase):
             service=self.settings.kind,
             workdir=SNAKEMAKE_MOUNTPOINT,
             hostdir=repr(getcwd()),  # TODO: allow to override
+            hostcache=repr(hostcache),
+            containercache=repr(containercache),
             image_id=self.spec.image_uri,
             shell="/bin/sh",
             cmd=cmd.replace("'", r"'\''"),
