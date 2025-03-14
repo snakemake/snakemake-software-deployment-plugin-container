@@ -18,7 +18,7 @@ from snakemake_software_deployment_plugin_container import (
     ContainerSettings,
     ContainerSpec,
     ContainerEnv,
-    ContainerType
+    ContainerType,
 )
 
 # There can be multiple subclasses of SoftwareDeploymentProviderBase here.
