@@ -1,3 +1,4 @@
+import subprocess as sp
 from typing import Optional, Type
 
 import pytest
@@ -53,6 +54,24 @@ class TestUDockerContainer(TestSoftwareDeploymentBase):
         # with exit code 0 (i.e. without error).
         return "/bin/true"
 
+    def test_report_software(self, tmp_path):
+        env = self._get_env(tmp_path)
+        cmd = self.get_test_cmd()
+        decorated_cmd = env.managed_decorate_shellcmd(cmd)
+
+        # force the run to actually fetch the image
+        # TODO: there might be a better way to test this after the automatic
+        # testing has actually been called
+        sp.run(decorated_cmd, shell=True, executable=self.shell_executable)
+        rep = tuple(env.report_software())
+
+        # check the first software reported, should be the container
+        # We're reporting version as the tag + the hash of the image
+        # latest/aded1e1a5b37
+        assert rep[0].name == "alpine"
+        assert len(rep[0].version) == 19
+        assert rep[0].version.startswith("latest/")
+
 
 # Helper function to check if podman is available
 def is_podman_available():
@@ -88,10 +107,20 @@ class TestPodmanContainer(TestSoftwareDeploymentBase):
         # with exit code 0 (i.e. without error).
         return "/bin/true"
 
+    # This test is optional; we are interested in peeking beyond the interface
+    # and make sure we're getting specific information from the container.
+    def test_report_software(self, tmp_path):
+        env = self._get_env(tmp_path)
+        cmd = self.get_test_cmd()
+        decorated_cmd = env.managed_decorate_shellcmd(cmd)
 
-# Test that the  container is outputting something useful at all
-"""
-sp.run(
-    decorated_cmd, shell=True, executable=self.shell_executable
-).returncode
-"""
+        # force the run to actually fetch the image
+        sp.run(decorated_cmd, shell=True, executable=self.shell_executable)
+        rep = tuple(env.report_software())
+
+        # check the first software reported, should be the container
+        # We're reporting version as the tag + the hash of the image
+        # latest/aded1e1a5b37
+        assert rep[0].name == "alpine"
+        assert len(rep[0].version) == 19
+        assert rep[0].version.startswith("latest/")
