@@ -3,6 +3,8 @@ __copyright__ = "Copyright 2025, ben carrillo"
 __email__ = "ben.uzh@pm.me"
 __license__ = "MIT"
 import os.path
+import tempfile
+
 from dataclasses import dataclass, field
 from os import getcwd
 from shutil import which
@@ -106,6 +108,9 @@ class ContainerEnv(EnvBase):
         containercache = os.path.join(
             SNAKEMAKE_MOUNTPOINT, ".cache/snakemake/source-cache"
         )
+
+        if not os.path.exists(hostcache):
+            hostcache = containercache = tempfile.mkdtemp()
 
         template = (
             "{service} run"
