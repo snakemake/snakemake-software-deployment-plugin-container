@@ -2,7 +2,9 @@ __author__ = "ben carrillo"
 __copyright__ = "Copyright 2025, ben carrillo"
 __email__ = "ben.uzh@pm.me"
 __license__ = "MIT"
+import json
 import os.path
+import subprocess
 import tempfile
 
 from dataclasses import dataclass, field
@@ -28,6 +30,9 @@ from snakemake_interface_common.settings import SettingsEnumBase
 
 # The mountpoint for the Snakemake working directory inside the container.
 SNAKEMAKE_MOUNTPOINT = "/mnt/snakemake"
+
+# Where the source-cache dir is found under the cache folder
+SOURCE_CACHE = "snakemake/source-cache"
 
 
 # ContainerType is an enum that defines the different container types we support.
@@ -76,6 +81,14 @@ class ContainerEnv(EnvBase):
     def __post_init__(self) -> None:
         self.check()
 
+    def _get_image_uri_and_tag(self) -> Iterable[str]:
+        parts = self.spec.image_uri.split(":")
+        if len(parts) > 2:
+            raise WorkflowError("Malformed image URI", self.spec.image_uri)
+        if len(parts) != 2:
+            parts += ["latest"]
+        return parts
+
     # The decorator ensures that the decorated method is only called once
     # in case multiple environments of the same kind are created.
     @EnvBase.once
@@ -85,8 +98,6 @@ class ContainerEnv(EnvBase):
     def _check_service(self) -> bool:
         if self.spec.image_uri == "":
             raise WorkflowError("Image URI is empty")
-
-        # TODO: if we don't get the tag, we should assume :latest
 
         if self.settings.kind not in ContainerType.all():
             raise WorkflowError("Invalid container kind")
@@ -103,11 +114,10 @@ class ContainerEnv(EnvBase):
 
     def decorate_shellcmd(self, cmd: str) -> str:
         # TODO pass more options here (extra mount volumes, user etc)
+        image = ":".join(self._get_image_uri_and_tag())
 
-        hostcache = os.path.join(get_appdirs().user_cache_dir, "snakemake/source-cache")
-        containercache = os.path.join(
-            SNAKEMAKE_MOUNTPOINT, ".cache/snakemake/source-cache"
-        )
+        hostcache = os.path.join(get_appdirs().user_cache_dir, SOURCE_CACHE)
+        containercache = os.path.join(SNAKEMAKE_MOUNTPOINT, ".cache", SOURCE_CACHE)
 
         if not os.path.exists(hostcache):
             hostcache = containercache = tempfile.mkdtemp()
@@ -130,7 +140,7 @@ class ContainerEnv(EnvBase):
             hostdir=repr(getcwd()),  # TODO: allow to override
             hostcache=repr(hostcache),
             containercache=repr(containercache),
-            image_id=self.spec.image_uri,
+            image_id=image,
             shell="/bin/sh",
             cmd=cmd.replace("'", r"'\''"),
         )
@@ -145,14 +155,83 @@ class ContainerEnv(EnvBase):
         hash_object.update(...)
 
     def report_software(self) -> Iterable[SoftwareReport]:
-        # Report the software contained in the environment. This should be a list of
-        # snakemake_interface_software_deployment_plugins.SoftwareReport data class.
-        # Use SoftwareReport.is_secondary = True if the software is just some
-        # less important technical dependency. This allows Snakemake's report to
-        # hide those for clarity. In case of containers, it is also valid to
-        # return the container URI as a "software".
-        # Return an empty tuple () if no software can be reported.
-        # TODO: implement.
-        # Get container URI + hash (assuming we've already executd and fetched the image,
-        # so that we can get the hash for the image plus the tag)
-        return ()
+        uri, tag = self._get_image_uri_and_tag()
+        image = SoftwareReport(
+            name=uri,
+            version=tag,
+        )
+
+        # In addition to the image tag, we also want to include the full image id in the version
+        # reporting.
+        # TODO: can move the managers to the initialization to encapsulate backend-specific logic
+        # TODO: we can retrieve the dereferenced URI from the image repo. But different backends
+        # have different ways of representing the metadata.
+        if self.settings.kind == ContainerType.PODMAN:
+            pm = PodmanManager()
+        elif self.settings.kind == ContainerType.UDOCKER:
+            pm = UDockerManager()
+        full_image_id = pm.inspect_image(uri)
+        if full_image_id != "":
+            image.version = f"{image.version}/{full_image_id}"
+
+        yield image
+
+
+class UDockerManager:
+    cmd = ContainerType.UDOCKER.item_to_choice()
+
+    def inspect_image(self, image_id) -> str:
+        try:
+            # Run udocker inspect command
+            result = subprocess.run(
+                [self.cmd, "inspect", image_id],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+
+            # Parse the output as JSON
+            inspect_data = json.loads(result.stdout)
+
+            # Extract the hash from rootfs.diff_ids
+            if "rootfs" in inspect_data and "diff_ids" in inspect_data["rootfs"]:
+                if len(inspect_data["rootfs"]["diff_ids"]) > 0:
+                    diff_id = inspect_data["rootfs"]["diff_ids"][0]
+                    # Remove sha256: prefix if present
+                    if diff_id.startswith("sha256:"):
+                        return diff_id[7:19]  # First 12 chars after prefix
+                    return diff_id[:12]
+
+            return ""  # Return empty string if hash not found
+
+        except (
+            subprocess.CalledProcessError,
+            json.JSONDecodeError,
+            KeyError,
+            IndexError,
+        ) as e:
+            print(f"error: failed to extract hash for udocker image {image_id}: {e}")
+            return ""
+
+
+class PodmanManager:
+    cmd = ContainerType.PODMAN.item_to_choice()
+
+    def inspect_image(self, image_id) -> str:
+        try:
+            result = subprocess.run(
+                [self.cmd, "inspect", image_id],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            inspect_data = json.loads(result.stdout)
+            full_image_id = inspect_data[0]["Id"]
+            truncated = full_image_id[:12]
+            return truncated
+        except subprocess.CalledProcessError as e:
+            print(f"error: failed to inspect image {image_id}: {e}")
+            return ""
+        except (KeyError, IndexError, json.JSONDecodeError) as e:
+            print(f"error: failed to parse output for image {image_id}: {e}")
+            return ""
