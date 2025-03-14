@@ -8,6 +8,10 @@ name: release-please
 env:
   PYTHON_VERSION: 3.11
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   release-please:
     runs-on: ubuntu-latest
