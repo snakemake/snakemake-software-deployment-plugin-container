@@ -106,10 +106,6 @@ class Env(EnvBase):
 
     def decorate_shellcmd(self, cmd: str) -> str:
         # TODO pass more options here (extra mount volumes, user etc)
-
-        hostcache = self.source_cache
-        # TODO determine the correct path inside the container
-        # TODO test this properly
         containercache = os.path.join(
             SNAKEMAKE_MOUNTPOINT, ".cache/snakemake/source-cache"
         )
@@ -117,10 +113,10 @@ class Env(EnvBase):
         decorated_cmd = (
             f"{self.settings.runtime} run"
             " --rm"  # Remove container after execution
-            f" -e HOME={SNAKEMAKE_MOUNTPOINT}"  # Set HOME to working directory
-            f" -w {SNAKEMAKE_MOUNTPOINT}"  # Working directory inside container
-            f" -v {getcwd()!r}:{SNAKEMAKE_MOUNTPOINT}"  # Mount host directory to container
-            f" -v {hostcache!r}:{containercache!r}"  # Mount host cache to container
+            f" -e HOME={SNAKEMAKE_MOUNTPOINT!r}"  # Set HOME to working directory
+            f" -w {SNAKEMAKE_MOUNTPOINT!r}"  # Working directory inside container
+            f" -v {getcwd()!r}:{SNAKEMAKE_MOUNTPOINT!r}"  # Mount host directory to container
+            f" -v {str(self.source_cache)!r}:{containercache!r}"  # Mount host cache to container
             f" {self.spec.image_uri}"  # Container image
             " /bin/sh"  # Shell executable
             f" -c {cmd!r}"  # The command to execute

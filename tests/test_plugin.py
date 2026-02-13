@@ -27,11 +27,8 @@ from snakemake_software_deployment_plugin_container import (
 # within, and, if applicable, environment deployment and archiving.
 
 
-class TestUDockerContainer(TestSoftwareDeploymentBase):
-    __test__ = True  # activate automatic testing
-
+class TestBase(TestSoftwareDeploymentBase):
     test_container = "alpine:latest"
-    runtime = Runtime.UDOCKER
 
     def get_env_spec(self) -> EnvSpecBase:
         # If the software deployment provider does not support deployable environments,
@@ -43,15 +40,22 @@ class TestUDockerContainer(TestSoftwareDeploymentBase):
         # Return the environment class that should be tested.
         return Env
 
-    def get_software_deployment_provider_settings(
-        self,
-    ) -> Optional[SoftwareDeploymentSettingsBase]:
-        return Settings(runtime=self.runtime)
+    def get_settings_cls(self) -> Optional[Type[SoftwareDeploymentSettingsBase]]:
+        return Settings
 
     def get_test_cmd(self) -> str:
         # Return a test command that should be executed within the environment
         # with exit code 0 (i.e. without error).
         return "/bin/true"
+
+
+class TestUDockerContainer(TestBase):
+    __test__ = True  # activate automatic testing
+
+    def get_settings(
+        self,
+    ) -> Optional[SoftwareDeploymentSettingsBase]:
+        return Settings(runtime=Runtime.UDOCKER)
 
 
 # Helper function to check if podman is available
@@ -62,28 +66,10 @@ def is_podman_available():
 @pytest.mark.skipif(
     not is_podman_available(), reason="podman not available on the system"
 )
-class TestPodmanContainer(TestSoftwareDeploymentBase):
+class TestPodmanContainer(TestBase):
     __test__ = True  # activate automatic testing
-
-    test_container = "alpine:latest"
-    runtime = Runtime.PODMAN
-
-    def get_env_spec(self) -> EnvSpecBase:
-        # If the software deployment provider does not support deployable environments,
-        # this method should return an existing environment spec that can be used
-        # for testing
-        return EnvSpec(self.test_container)
-
-    def get_env_cls(self) -> Type[EnvBase]:
-        # Return the environment class that should be tested.
-        return Env
 
     def get_software_deployment_provider_settings(
         self,
     ) -> Optional[SoftwareDeploymentSettingsBase]:
-        return Settings(runtime=self.runtime)
-
-    def get_test_cmd(self) -> str:
-        # Return a test command that should be executed within the environment
-        # with exit code 0 (i.e. without error).
-        return "/bin/true"
+        return Settings(runtime=Runtime.PODMAN)
