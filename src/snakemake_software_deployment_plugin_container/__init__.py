@@ -4,14 +4,12 @@ __email__ = "ben.uzh@pm.me"
 __license__ = "MIT"
 import os.path
 import shlex
-import tempfile
 
 from dataclasses import dataclass, field
 from os import getcwd
 from shutil import which
-from typing import Iterable, Optional
+from typing import Iterable
 
-from snakemake.common import get_appdirs
 from snakemake_interface_software_deployment_plugins.settings import (
     SoftwareDeploymentSettingsBase,
 )
@@ -33,15 +31,15 @@ SNAKEMAKE_MOUNTPOINT = "/mnt/snakemake"
 
 # ContainerType is an enum that defines the different container types we support.
 # If adding new ones, make sure the choice is the same as the command name.
-class ContainerType(SettingsEnumBase):
+class Runtime(SettingsEnumBase):
     UDOCKER = 0
     PODMAN = 1
 
 
 @dataclass
-class ContainerSettings(SoftwareDeploymentSettingsBase):
-    kind: Optional[ContainerType] = field(
-        default=ContainerType.UDOCKER,
+class Settings(SoftwareDeploymentSettingsBase):
+    runtime: Runtime = field(
+        default=Runtime.UDOCKER,
         metadata={
             "help": "Container kind (udocker by default)",
             "env_var": False,
@@ -51,7 +49,7 @@ class ContainerSettings(SoftwareDeploymentSettingsBase):
 
 
 @dataclass
-class ContainerSpec(EnvSpecBase):
+class EnvSpec(EnvSpecBase):
     # TODO: when integrating this plugin, image_uri should be populated from the container keyword (via whatever mechanism is exposing)
     # the plugin to the software deployment registry.
     image_uri: str
@@ -64,11 +62,17 @@ class ContainerSpec(EnvSpecBase):
     def source_path_attributes(cls) -> Iterable[str]:
         return ()
 
+    def __str__(self) -> str:
+        """Return a string representation of the environment spec."""
+        return self.image_uri
+
 
 # All errors should be wrapped with snakemake-interface-common.errors.WorkflowError
-class ContainerEnv(EnvBase):
+class Env(EnvBase):
     # image_repo is the de-referenced repository from where the image was obtained
     image_repo: str
+    settings: Settings  # type: ignore
+    spec: EnvSpec  # type: ignore
 
     # image_hash is a hash of the image that can be used to identify it
     # TODO: populate it *after* fetching/execution
@@ -83,57 +87,40 @@ class ContainerEnv(EnvBase):
     def check(self) -> None:
         self._check_service()
 
-    def _check_service(self) -> bool:
+    def _check_service(self) -> None:
         if self.spec.image_uri == "":
             raise WorkflowError("Image URI is empty")
 
         # TODO: if we don't get the tag, we should assume :latest
 
-        if self.settings.kind not in ContainerType.all():
+        if self.settings.runtime not in Runtime.all():
             raise WorkflowError("Invalid container kind")
 
         # this assumes that the choices are the same as the command names. If
         # this is not the case, we need to add a mapping.
         self._check_executable()
 
-    def _check_executable(self):
-        cmd = self.settings.kind.item_to_choice()
+    def _check_executable(self) -> None:
+        cmd = self.settings.runtime.item_to_choice()
         if which(cmd) is None:
             raise WorkflowError(f"{cmd} is not available in PATH")
-        return True
 
     def decorate_shellcmd(self, cmd: str) -> str:
         # TODO pass more options here (extra mount volumes, user etc)
-
-        hostcache = os.path.join(get_appdirs().user_cache_dir, "snakemake/source-cache")
         containercache = os.path.join(
             SNAKEMAKE_MOUNTPOINT, ".cache/snakemake/source-cache"
         )
 
-        if not os.path.exists(hostcache):
-            hostcache = containercache = tempfile.mkdtemp()
-
-        template = (
-            "{service} run"
+        decorated_cmd = (
+            f"{self.settings.runtime} run"
             " --rm"  # Remove container after execution
-            " -e HOME={workdir}"  # Set HOME to working directory
-            " -w {workdir}"  # Working directory inside container
-            " -v {hostdir}:{workdir}"  # Mount host directory to container
-            " -v {hostcache}:{containercache}"  # Mount host cache to container
-            " {image_id}"  # Container image
-            " {shell}"  # Shell executable
-            " -c '{cmd}'"  # The command to execute
-        )
-
-        decorated_cmd = template.format(
-            service=self.settings.kind,
-            workdir=SNAKEMAKE_MOUNTPOINT,
-            hostdir=repr(getcwd()),  # TODO: allow to override
-            hostcache=repr(hostcache),
-            containercache=repr(containercache),
-            image_id=self.spec.image_uri,
-            shell="/bin/sh",
-            cmd=shlex.quote(cmd),
+            f" -e HOME={SNAKEMAKE_MOUNTPOINT!r}"  # Set HOME to working directory
+            f" -w {SNAKEMAKE_MOUNTPOINT!r}"  # Working directory inside container
+            f" -v {getcwd()!r}:{SNAKEMAKE_MOUNTPOINT!r}"  # Mount host directory to container
+            f" -v {str(self.source_cache)!r}:{containercache!r}"  # Mount host cache to container
+            f" {self.spec.image_uri}"  # Container image
+            " /bin/sh"  # Shell executable
+            f" -c {shlex.quote(cmd)}"  # The command to execute
         )
 
         return decorated_cmd
