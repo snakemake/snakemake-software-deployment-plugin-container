@@ -15,10 +15,10 @@ from snakemake_interface_software_deployment_plugins.settings import (
 )
 
 from snakemake_software_deployment_plugin_container import (
-    ContainerSettings,
-    ContainerSpec,
-    ContainerEnv,
-    ContainerType,
+    Settings,
+    EnvSpec,
+    Env,
+    Runtime,
 )
 
 # There can be multiple subclasses of SoftwareDeploymentProviderBase here.
@@ -27,31 +27,35 @@ from snakemake_software_deployment_plugin_container import (
 # within, and, if applicable, environment deployment and archiving.
 
 
-class TestUDockerContainer(TestSoftwareDeploymentBase):
-    __test__ = True  # activate automatic testing
-
+class TestBase(TestSoftwareDeploymentBase):
     test_container = "alpine:latest"
-    kind = ContainerType.UDOCKER
 
     def get_env_spec(self) -> EnvSpecBase:
         # If the software deployment provider does not support deployable environments,
         # this method should return an existing environment spec that can be used
         # for testing
-        return ContainerSpec(self.test_container)
+        return EnvSpec(self.test_container)
 
     def get_env_cls(self) -> Type[EnvBase]:
         # Return the environment class that should be tested.
-        return ContainerEnv
+        return Env
 
-    def get_software_deployment_provider_settings(
-        self,
-    ) -> Optional[SoftwareDeploymentSettingsBase]:
-        return ContainerSettings(kind=self.kind)
+    def get_settings_cls(self) -> Optional[Type[SoftwareDeploymentSettingsBase]]:
+        return Settings
 
     def get_test_cmd(self) -> str:
         # Return a test command that should be executed within the environment
         # with exit code 0 (i.e. without error).
         return "/bin/true"
+
+
+class TestUDockerContainer(TestBase):
+    __test__ = True  # activate automatic testing
+
+    def get_settings(
+        self,
+    ) -> Optional[SoftwareDeploymentSettingsBase]:
+        return Settings(runtime=Runtime.UDOCKER)
 
 
 # Helper function to check if podman is available
@@ -62,36 +66,10 @@ def is_podman_available():
 @pytest.mark.skipif(
     not is_podman_available(), reason="podman not available on the system"
 )
-class TestPodmanContainer(TestSoftwareDeploymentBase):
+class TestPodmanContainer(TestBase):
     __test__ = True  # activate automatic testing
-
-    test_container = "alpine:latest"
-    kind = ContainerType.PODMAN
-
-    def get_env_spec(self) -> EnvSpecBase:
-        # If the software deployment provider does not support deployable environments,
-        # this method should return an existing environment spec that can be used
-        # for testing
-        return ContainerSpec(self.test_container)
-
-    def get_env_cls(self) -> Type[EnvBase]:
-        # Return the environment class that should be tested.
-        return ContainerEnv
 
     def get_software_deployment_provider_settings(
         self,
     ) -> Optional[SoftwareDeploymentSettingsBase]:
-        return ContainerSettings(kind=self.kind)
-
-    def get_test_cmd(self) -> str:
-        # Return a test command that should be executed within the environment
-        # with exit code 0 (i.e. without error).
-        return "/bin/true"
-
-
-# Test that the  container is outputting something useful at all
-"""
-sp.run(
-    decorated_cmd, shell=True, executable=self.shell_executable
-).returncode
-"""
+        return Settings(runtime=Runtime.PODMAN)
