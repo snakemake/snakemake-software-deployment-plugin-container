@@ -1,32 +1,71 @@
 [project]
 name = "snakemake-software-deployment-plugin-container"
 version = "0.1.0"
+authors = [
+    { name = "Ben Carrillo", email = "ben.uzh@pm.me" },
+    { name = "Johannes Köster", email = "johannes.koester@uni-due.de" }
+]
 description = ""
 readme = "README.md"
 requires-python = ">=3.11,<4.0"
-dependencies = ["snakemake-interface-common (>=1.17.4,<2.0.0)", "snakemake-interface-software-deployment-plugins (>=0.6.1,<0.7.0)", "udocker (>=1.3.17,<2.0.0)", "snakemake (>=8.30)"]
-repository = "https://github.com/btraven00/snakemake-software-deployment-plugin-container"
+dependencies = [
+    "snakemake-interface-common (>=1.17.4,<2.0.0)",
+    "snakemake-interface-software-deployment-plugins (>=0.9.1,<1.0)",
+    "udocker (>=1.3.17,<2.0.0)",
+]
+
+[project.urls]
+repository = "https://github.com/snakemake/snakemake-software-deployment-plugin-container"
 documentation = "https://snakemake.github.io/snakemake-plugin-catalog/plugins/software-deployment/container.html"
-[[project.authors]]
-name = "ben carrillo"
-email = "ben.uzh@pm.me"
 
 [build-system]
-requires = [ "poetry-core>=2.0.0,<3.0.0",]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-[tool.poetry]
-[[tool.poetry.packages]]
-include = "snakemake_software_deployment_plugin_container"
-from = "src"
+[tool.pixi.pypi-dependencies]
+snakemake-software-deployment-plugin-container = { path = ".", editable = true }
 
-[tool.poetry.group.dev.dependencies]
-ruff = "^0.9.10"
-coverage = "^7.6.12"
-pytest = "^8.3.5"
-udocker = "^1.3.17"
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["osx-arm64", "linux-64"]
 
-[tool.poetry.group.test.dependencies]
-pytest = "^8.3.5"
-udocker = "^1.3.17"
+[tool.pixi.environments]
+dev = { features = ["dev"] }
+publish = { features = ["publish"] }
 
+[tool.pixi.feature.dev.dependencies]
+pytest = ">=8.3.5,<9"
+ruff = ">=0.10.0,<0.11"
+pytest-cov = ">=6.0.0,<7"
+pyrefly = ">=0.52.0,<0.53"
+
+[tool.pixi.feature.dev.tasks]
+format = "ruff format"
+lint = "ruff check"
+typecheck = "pyrefly check"
+qc = { depends-on = ["format", "lint"] }
+coverage-report = "coverage report -m"
+
+[tool.pixi.feature.dev.tasks.test]
+cmd = [
+    "pytest",
+    "--cov=snakemake_software_deployment_plugin_envmodules",
+    "--cov-report=xml:coverage-report/coverage.xml",
+    "--cov-report=term-missing",
+    "tests/test_plugin.py",
+]
+
+[tool.coverage.report]
+exclude_lines = ["pass", "\\.\\.\\."]
+fail_under = 70.0
+
+[tool.pixi.feature.publish.dependencies]
+twine = ">=6.1.0,<7"
+python-build = ">=1.2.2,<2"
+
+
+[tool.pixi.feature.publish.tasks]
+build = { cmd = "python -m build", description = "Build the package into the dist/ directory" }
+check-build = { cmd = "python -m twine check dist/*", depends-on = [
+    "build",
+], description = "Check that the package can be uploaded" }
