@@ -49,7 +49,7 @@ coverage-report = "coverage report -m"
 [tool.pixi.feature.dev.tasks.test]
 cmd = [
     "pytest",
-    "--cov=snakemake_software_deployment_plugin_envmodules",
+    "--cov=snakemake_software_deployment_plugin_container",
     "--cov-report=xml:coverage-report/coverage.xml",
     "--cov-report=term-missing",
     "tests/test_plugin.py",
@@ -57,7 +57,7 @@ cmd = [
 
 [tool.coverage.report]
 exclude_lines = ["pass", "\\.\\.\\."]
-fail_under = 70.0
+fail_under = 94.0
 
 [tool.pixi.feature.publish.dependencies]
 twine = ">=6.1.0,<7"
