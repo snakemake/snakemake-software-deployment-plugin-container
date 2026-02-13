@@ -3,6 +3,7 @@ __copyright__ = "Copyright 2025, ben carrillo"
 __email__ = "ben.uzh@pm.me"
 __license__ = "MIT"
 import os.path
+import shlex
 
 from dataclasses import dataclass, field
 from os import getcwd
@@ -119,7 +120,7 @@ class Env(EnvBase):
             f" -v {str(self.source_cache)!r}:{containercache!r}"  # Mount host cache to container
             f" {self.spec.image_uri}"  # Container image
             " /bin/sh"  # Shell executable
-            f" -c {cmd!r}"  # The command to execute
+            f" -c {shlex.quote(cmd)}"  # The command to execute
         )
 
         return decorated_cmd
