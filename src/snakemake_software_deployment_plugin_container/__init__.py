@@ -7,7 +7,7 @@ import os.path
 from dataclasses import dataclass, field
 from os import getcwd
 from shutil import which
-from typing import Iterable
+from typing import Iterable, List
 import shlex
 
 from snakemake_interface_software_deployment_plugins.settings import (
@@ -51,7 +51,7 @@ class Settings(SoftwareDeploymentSettingsBase):
         metadata={
             "nargs": "+",
             "help": "Additional mount points (format: hostpath:containerpath)",
-        }
+        },
     )
 
 
