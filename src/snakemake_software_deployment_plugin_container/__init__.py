@@ -47,7 +47,7 @@ class Settings(SoftwareDeploymentSettingsBase):
         },
     )
     mountpoints: List[str] = field(
-        default=[],
+        default_factory=list,
         metadata={
             "nargs": "+",
             "help": "Additional mount points (format: hostpath:containerpath)",
