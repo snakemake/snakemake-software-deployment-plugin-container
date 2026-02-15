@@ -8,7 +8,8 @@ import shlex
 from dataclasses import dataclass, field
 from os import getcwd
 from shutil import which
-from typing import Iterable
+from typing import Iterable, List
+import shlex
 
 from snakemake_interface_software_deployment_plugins.settings import (
     SoftwareDeploymentSettingsBase,
@@ -44,6 +45,13 @@ class Settings(SoftwareDeploymentSettingsBase):
             "help": "Container kind (udocker by default)",
             "env_var": False,
             "required": False,
+        },
+    )
+    mountpoints: List[str] = field(
+        default_factory=list,
+        metadata={
+            "nargs": "+",
+            "help": "Additional mount points (format: hostpath:containerpath)",
         },
     )
 
@@ -111,13 +119,19 @@ class Env(EnvBase):
             SNAKEMAKE_MOUNTPOINT, ".cache/snakemake/source-cache"
         )
 
+        mountpoints = (
+            f" -v {getcwd()!r}:{SNAKEMAKE_MOUNTPOINT!r}"  # Mount host directory to container
+            f" -v {str(self.source_cache)!r}:{containercache!r}"  # Mount host cache to container
+        )
+        for mountpoint in self.settings.mountpoints:
+            mountpoints += f" -v {mountpoint!r}"
+
         decorated_cmd = (
             f"{self.settings.runtime} run"
             " --rm"  # Remove container after execution
             f" -e HOME={SNAKEMAKE_MOUNTPOINT!r}"  # Set HOME to working directory
             f" -w {SNAKEMAKE_MOUNTPOINT!r}"  # Working directory inside container
-            f" -v {getcwd()!r}:{SNAKEMAKE_MOUNTPOINT!r}"  # Mount host directory to container
-            f" -v {str(self.source_cache)!r}:{containercache!r}"  # Mount host cache to container
+            f" {mountpoints}"
             f" {self.spec.image_uri}"  # Container image
             " /bin/sh"  # Shell executable
             f" -c {shlex.quote(cmd)}"  # The command to execute

@@ -35,7 +35,7 @@ publish = { features = ["publish"] }
 
 [tool.pixi.feature.dev.dependencies]
 pytest = ">=8.3.5,<9"
-ruff = ">=0.10.0,<0.11"
+ruff = ">=0.10.0,<0.15"
 pytest-cov = ">=6.0.0,<7"
 pyrefly = ">=0.52.0,<0.53"
 
