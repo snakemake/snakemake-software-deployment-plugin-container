@@ -3,6 +3,7 @@ __copyright__ = "Copyright 2025, ben carrillo"
 __email__ = "ben.uzh@pm.me"
 __license__ = "MIT"
 
+import os.path
 import shlex
 from dataclasses import dataclass, field
 from os import getcwd
@@ -114,6 +115,13 @@ class Env(EnvBase):
         mountpoints = (
             f" -v {getcwd()!r}:{getcwd()!r}"  # Mount host directory to container
             f" -v {str(self.source_cache)!r}:{str(self.source_cache)!r}"  # Mount host cache to container
+        )
+        for mountpoint in self.settings.mountpoints:
+            mountpoints += f" -v {mountpoint!r}"
+
+        mountpoints = (
+            f" -v {getcwd()!r}:{SNAKEMAKE_MOUNTPOINT!r}"  # Mount host directory to container
+            f" -v {str(self.source_cache)!r}:{containercache!r}"  # Mount host cache to container
         )
         for mountpoint in self.settings.mountpoints:
             mountpoints += f" -v {mountpoint!r}"
