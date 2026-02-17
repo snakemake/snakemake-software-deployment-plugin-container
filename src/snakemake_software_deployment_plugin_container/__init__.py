@@ -3,7 +3,6 @@ __copyright__ = "Copyright 2025, ben carrillo"
 __email__ = "ben.uzh@pm.me"
 __license__ = "MIT"
 
-import os.path
 import shlex
 from dataclasses import dataclass, field
 from os import getcwd
