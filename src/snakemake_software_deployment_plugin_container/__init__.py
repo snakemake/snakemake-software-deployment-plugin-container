@@ -119,17 +119,9 @@ class Env(EnvBase):
         for mountpoint in self.settings.mountpoints:
             mountpoints += f" -v {mountpoint!r}"
 
-        mountpoints = (
-            f" -v {getcwd()!r}:{SNAKEMAKE_MOUNTPOINT!r}"  # Mount host directory to container
-            f" -v {str(self.source_cache)!r}:{containercache!r}"  # Mount host cache to container
-        )
-        for mountpoint in self.settings.mountpoints:
-            mountpoints += f" -v {mountpoint!r}"
-
         decorated_cmd = (
             f"{self.settings.runtime} run"
             " --rm"  # Remove container after execution
-            # f" -e HOME={SNAKEMAKE_MOUNTPOINT!r}"  # Set HOME to working directory
             f" -w {getcwd()!r}"  # Working directory inside container
             f" {mountpoints}"
             f" {self.spec.image_uri}"  # Container image
