@@ -3,12 +3,11 @@ __copyright__ = "Copyright 2025, ben carrillo"
 __email__ = "ben.uzh@pm.me"
 __license__ = "MIT"
 import os.path
-
+import shlex
 from dataclasses import dataclass, field
 from os import getcwd
 from shutil import which
 from typing import Iterable, List
-import shlex
 
 from snakemake_interface_software_deployment_plugins.settings import (
     SoftwareDeploymentSettingsBase,
@@ -44,6 +43,7 @@ class Settings(SoftwareDeploymentSettingsBase):
             "help": "Container kind (udocker by default)",
             "env_var": False,
             "required": False,
+            "choices": Runtime.choices(),
         },
     )
     mountpoints: List[str] = field(
