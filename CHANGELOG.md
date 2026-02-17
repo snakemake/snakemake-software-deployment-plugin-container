@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/snakemake/snakemake-software-deployment-plugin-container/compare/v0.1.0...v0.2.0) (2026-02-17)
+
+
+### Features
+
+* additional mountpoints ([#5](https://github.com/snakemake/snakemake-software-deployment-plugin-container/issues/5)) ([29ba897](https://github.com/snakemake/snakemake-software-deployment-plugin-container/commit/29ba897154bac2082d42048c601a6177e0db0d82))
+
 ## 0.1.0 (2026-02-13)
 
 
