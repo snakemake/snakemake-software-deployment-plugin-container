@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/snakemake/snakemake-software-deployment-plugin-container/compare/v0.2.1...v0.3.0) (2026-02-18)
+
+
+### Features
+
+* always mount system tempdir ([60ef0bd](https://github.com/snakemake/snakemake-software-deployment-plugin-container/commit/60ef0bd3384edffc8816b687b88a321da4b053f3))
+
 ## [0.2.1](https://github.com/snakemake/snakemake-software-deployment-plugin-container/compare/v0.2.0...v0.2.1) (2026-02-17)
 
 
