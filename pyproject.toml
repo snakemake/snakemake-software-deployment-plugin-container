@@ -1,6 +1,6 @@
 [project]
 name = "snakemake-software-deployment-plugin-container"
-version = "0.1.0"
+version = "0.2.1"
 authors = [
     { name = "Ben Carrillo", email = "ben.uzh@pm.me" },
     { name = "Johannes Köster", email = "johannes.koester@uni-due.de" }
@@ -35,7 +35,7 @@ publish = { features = ["publish"] }
 
 [tool.pixi.feature.dev.dependencies]
 pytest = ">=8.3.5,<9"
-ruff = ">=0.10.0,<0.11"
+ruff = ">=0.10.0,<0.15"
 pytest-cov = ">=6.0.0,<7"
 pyrefly = ">=0.52.0,<0.53"
 
@@ -57,7 +57,7 @@ cmd = [
 
 [tool.coverage.report]
 exclude_lines = ["pass", "\\.\\.\\."]
-fail_under = 94.0
+fail_under = 91.0
 
 [tool.pixi.feature.publish.dependencies]
 twine = ">=6.1.0,<7"

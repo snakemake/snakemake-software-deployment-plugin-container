@@ -2,12 +2,12 @@ __author__ = "ben carrillo"
 __copyright__ = "Copyright 2025, ben carrillo"
 __email__ = "ben.uzh@pm.me"
 __license__ = "MIT"
-import os.path
 
+import shlex
 from dataclasses import dataclass, field
 from os import getcwd
 from shutil import which
-from typing import Iterable
+from typing import Iterable, List
 
 from snakemake_interface_software_deployment_plugins.settings import (
     SoftwareDeploymentSettingsBase,
@@ -22,10 +22,6 @@ from snakemake_interface_software_deployment_plugins import (
 # Snakemake and the user as WorkflowError.
 from snakemake_interface_common.exceptions import WorkflowError  # noqa: F401
 from snakemake_interface_common.settings import SettingsEnumBase
-
-
-# The mountpoint for the Snakemake working directory inside the container.
-SNAKEMAKE_MOUNTPOINT = "/mnt/snakemake"
 
 
 # ContainerType is an enum that defines the different container types we support.
@@ -122,17 +118,17 @@ class Env(EnvBase):
             f" -v {str(self.source_cache)!r}:{str(self.source_cache)!r}"  # Mount host cache to container
             f" -v {tmpdir!r}:{tmpdir!r}" # always mount the temporary directory
         )
+        for mountpoint in self.settings.mountpoints:
+            mountpoints += f" -v {mountpoint!r}"
 
         decorated_cmd = (
             f"{self.settings.runtime} run"
             " --rm"  # Remove container after execution
-            f" -e HOME={SNAKEMAKE_MOUNTPOINT!r}"  # Set HOME to working directory
-            f" -w {SNAKEMAKE_MOUNTPOINT!r}"  # Working directory inside container
-            f" -v {getcwd()!r}:{SNAKEMAKE_MOUNTPOINT!r}"  # Mount host directory to container
-            f" -v {str(self.source_cache)!r}:{containercache!r}"  # Mount host cache to container
+            f" -w {getcwd()!r}"  # Working directory inside container
+            f" {mountpoints}"
             f" {self.spec.image_uri}"  # Container image
             " /bin/sh"  # Shell executable
-            f" -c {cmd!r}"  # The command to execute
+            f" -c {shlex.quote(cmd)}"  # The command to execute
         )
 
         return decorated_cmd
@@ -142,7 +138,7 @@ class Env(EnvBase):
         # could potentially contain a different set of software (in terms of versions or
         # packages). Use self.spec (containing the corresponding EnvSpec object)
         # to determine the hash.
-        hash_object.update(...)
+        hash_object.update(self.spec.image_uri.encode())
 
     def report_software(self) -> Iterable[SoftwareReport]:
         # Report the software contained in the environment. This should be a list of
