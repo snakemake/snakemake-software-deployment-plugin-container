@@ -43,6 +43,15 @@ class Settings(SoftwareDeploymentSettingsBase):
             "help": "Container kind (udocker by default)",
             "env_var": False,
             "required": False,
+            "choices": Runtime.choices(),
+        },
+    )
+    mountpoints: List[str] = field(
+        default_factory=list,
+        metadata={
+            "nargs": "+",
+            "help": "Additional mount points (format: hostpath:containerpath). "
+            "Current working directory and the system tmpdir are always mounted.",
         },
     )
 
@@ -105,9 +114,13 @@ class Env(EnvBase):
             raise WorkflowError(f"{cmd} is not available in PATH")
 
     def decorate_shellcmd(self, cmd: str) -> str:
-        # TODO pass more options here (extra mount volumes, user etc)
-        containercache = os.path.join(
-            SNAKEMAKE_MOUNTPOINT, ".cache/snakemake/source-cache"
+        # TODO pass more options here (user etc)
+        tmpdir = tempfile.gettempdir()
+
+        mountpoints = (
+            f" -v {getcwd()!r}:{getcwd()!r}"  # Mount host directory to container
+            f" -v {str(self.source_cache)!r}:{str(self.source_cache)!r}"  # Mount host cache to container
+            f" -v {tmpdir!r}:{tmpdir!r}" # always mount the temporary directory
         )
 
         decorated_cmd = (
