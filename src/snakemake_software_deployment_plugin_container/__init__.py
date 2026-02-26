@@ -4,7 +4,6 @@ __email__ = "ben.uzh@pm.me"
 __license__ = "MIT"
 
 import shlex
-import tempfile
 from dataclasses import dataclass, field
 from os import getcwd
 from shutil import which
@@ -76,8 +75,8 @@ class EnvSpec(EnvSpecBase):
 class Env(EnvBase):
     # image_repo is the de-referenced repository from where the image was obtained
     image_repo: str
-    settings: Settings  # type: ignore
-    spec: EnvSpec  # type: ignore
+    settings: Settings
+    spec: EnvSpec
 
     # image_hash is a hash of the image that can be used to identify it
     # TODO: populate it *after* fetching/execution
@@ -111,14 +110,13 @@ class Env(EnvBase):
             raise WorkflowError(f"{cmd} is not available in PATH")
 
     def decorate_shellcmd(self, cmd: str) -> str:
-        # TODO pass more options here (user etc)
-        tmpdir = tempfile.gettempdir()
+        # TODO pass more options here (user etc)?
 
         mountpoints = (
-            f" -v {getcwd()!r}:{getcwd()!r}"  # Mount host directory to container
-            f" -v {str(self.source_cache)!r}:{str(self.source_cache)!r}"  # Mount host cache to container
-            f" -v {tmpdir!r}:{tmpdir!r}"  # always mount the temporary directory
+            f" -v {str(self.tempdir)!r}:/tmp"  # always mount the temporary directory
         )
+        for mountpoint in self.mountpoints:
+            mountpoints += f" -v {mountpoint!r}:{mountpoint!r}"
         for mountpoint in self.settings.mountpoints:
             mountpoints += f" -v {mountpoint!r}"
 
