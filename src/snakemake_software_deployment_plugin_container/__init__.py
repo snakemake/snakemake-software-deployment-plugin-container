@@ -132,6 +132,16 @@ class Env(EnvBase):
 
         return decorated_cmd
 
+    def contains_executable(self, executable: str) -> bool:
+        return (
+            self.run_cmd(
+                self.decorate_shellcmd(f"which {executable}"),
+                check=True,
+                capture_output=True,
+            ).returncode
+            == 0
+        )
+
     def record_hash(self, hash_object) -> None:
         # Update given hash such that it changes whenever the environment
         # could potentially contain a different set of software (in terms of versions or
