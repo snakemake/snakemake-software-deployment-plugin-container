@@ -116,7 +116,7 @@ class Env(EnvBase):
             f" -v {str(self.tempdir)!r}:/tmp"  # always mount the temporary directory
         )
         for mountpoint in self.mountpoints:
-            mountpoints += f" -v {mountpoint!r}:{mountpoint!r}"
+            mountpoints += f" -v {str(mountpoint)!r}:{str(mountpoint)!r}"
         for mountpoint in self.settings.mountpoints:
             mountpoints += f" -v {mountpoint!r}"
 
