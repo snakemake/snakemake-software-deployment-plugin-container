@@ -1,3 +1,4 @@
+import re
 __author__ = "ben carrillo"
 __copyright__ = "Copyright 2025, ben carrillo"
 __email__ = "ben.uzh@pm.me"
@@ -8,6 +9,7 @@ from dataclasses import dataclass, field
 from os import getcwd
 from shutil import which
 from typing import Iterable, List
+import urllib.parse
 
 from snakemake_interface_software_deployment_plugins.settings import (
     SoftwareDeploymentSettingsBase,
@@ -29,6 +31,7 @@ from snakemake_interface_common.settings import SettingsEnumBase
 class Runtime(SettingsEnumBase):
     UDOCKER = 0
     PODMAN = 1
+    APPTAINER = 2
 
 
 @dataclass
@@ -120,15 +123,25 @@ class Env(EnvBase):
         for mountpoint in self.settings.mountpoints:
             mountpoints += f" -v {mountpoint!r}"
 
+        options = ""
+        image_uri = self.spec.image_uri
+        if self.settings.runtime == Runtime.APPTAINER:
+            options = "--writable"
+            if not re.match(r"[a-z\.]+://", image_uri):
+                image_uri = f"docker://{image_uri}"
+        else:
+            options = "--rm"
+
         decorated_cmd = (
             f"{self.settings.runtime} run"
-            " --rm"  # Remove container after execution
+            f" {options}"
             f" -w {getcwd()!r}"  # Working directory inside container
             f" {mountpoints}"
-            f" {self.spec.image_uri}"  # Container image
+            f" {image_uri}"  # Container image
             " /bin/sh"  # Shell executable
             f" -c {shlex.quote(cmd)}"  # The command to execute
         )
+        breakpoint()
 
         return decorated_cmd
 

@@ -49,6 +49,15 @@ class TestBase(TestSoftwareDeploymentBase):
         return "/bin/true"
 
 
+class TestApptainerContainer(TestBase):
+    __test__ = True  # activate automatic testing
+
+    def get_settings(
+        self,
+    ) -> Optional[SoftwareDeploymentSettingsBase]:
+        return Settings(runtime=Runtime.APPTAINER)
+
+
 class TestUDockerContainer(TestBase):
     __test__ = True  # activate automatic testing
 
