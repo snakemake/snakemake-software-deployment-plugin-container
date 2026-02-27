@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.0](https://github.com/snakemake/snakemake-software-deployment-plugin-container/compare/v0.3.0...v0.4.0) (2026-02-27)
+
+
+### Features
+
+* implement check whether given executable is contained in container image ([9edf4a6](https://github.com/snakemake/snakemake-software-deployment-plugin-container/commit/9edf4a6d4a80cea414bdbc844a58d052e2e8db0a))
+
+
+### Bug Fixes
+
+* adapt to latest changes in interface ([3c5fd0b](https://github.com/snakemake/snakemake-software-deployment-plugin-container/commit/3c5fd0bda99ec3e64dbe0b2b9012e14287759509))
+
 ## [0.3.0](https://github.com/snakemake/snakemake-software-deployment-plugin-container/compare/v0.2.1...v0.3.0) (2026-02-18)
 
 
