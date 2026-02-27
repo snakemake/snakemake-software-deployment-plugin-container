@@ -1,4 +1,5 @@
 import re
+
 __author__ = "ben carrillo"
 __copyright__ = "Copyright 2025, ben carrillo"
 __email__ = "ben.uzh@pm.me"
@@ -9,7 +10,6 @@ from dataclasses import dataclass, field
 from os import getcwd
 from shutil import which
 from typing import Iterable, List
-import urllib.parse
 
 from snakemake_interface_software_deployment_plugins.settings import (
     SoftwareDeploymentSettingsBase,
