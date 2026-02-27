@@ -115,33 +115,33 @@ class Env(EnvBase):
     def decorate_shellcmd(self, cmd: str) -> str:
         # TODO pass more options here (user etc)?
 
-        mountpoints = (
-            f" -v {str(self.tempdir)!r}:/tmp"  # always mount the temporary directory
-        )
-        for mountpoint in self.mountpoints:
-            mountpoints += f" -v {str(mountpoint)!r}:{str(mountpoint)!r}"
-        for mountpoint in self.settings.mountpoints:
-            mountpoints += f" -v {mountpoint!r}"
-
         options = ""
         image_uri = self.spec.image_uri
+        workdir_option = "-w"
+        mount_option = "-v"
         if self.settings.runtime == Runtime.APPTAINER:
-            options = "--writable"
+            workdir_option = "--cwd"
+            mount_option = "--bind"
             if not re.match(r"[a-z\.]+://", image_uri):
                 image_uri = f"docker://{image_uri}"
         else:
             options = "--rm"
 
+        mountpoints = f" {mount_option} {str(self.tempdir)!r}:/tmp"  # always mount the temporary directory
+        for mountpoint in self.mountpoints:
+            mountpoints += f" {mount_option} {str(mountpoint)!r}:{str(mountpoint)!r}"
+        for mountpoint in self.settings.mountpoints:
+            mountpoints += f" {mount_option} {mountpoint!r}"
+
         decorated_cmd = (
             f"{self.settings.runtime} run"
             f" {options}"
-            f" -w {getcwd()!r}"  # Working directory inside container
+            f" {workdir_option} {getcwd()!r}"  # Working directory inside container
             f" {mountpoints}"
             f" {image_uri}"  # Container image
             " /bin/sh"  # Shell executable
             f" -c {shlex.quote(cmd)}"  # The command to execute
         )
-        breakpoint()
 
         return decorated_cmd
 
