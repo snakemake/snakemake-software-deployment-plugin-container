@@ -87,22 +87,19 @@ class Env(EnvBase):
 
     def __post_init__(self) -> None:
         self.check()
+        self.runtime_manager = RuntimeManager(self)
+        if self.settings.runtime == Runtime.APPTAINER:
+            self.runtime_manager = RuntimeManagerApptainer(self)
 
     # The decorator ensures that the decorated method is only called once
     # in case multiple environments of the same kind are created.
     @EnvBase.once
     def check(self) -> None:
+        # TODO: if we don't get the tag, we should assume :latest
+        # TODO: normalize tag to always use : instead of # as formerly with singularity
         self._check_service()
 
     def _check_service(self) -> None:
-        if self.spec.image_uri == "":
-            raise WorkflowError("Image URI is empty")
-
-        # TODO: if we don't get the tag, we should assume :latest
-
-        if self.settings.runtime not in Runtime.all():
-            raise WorkflowError("Invalid container kind")
-
         # this assumes that the choices are the same as the command names. If
         # this is not the case, we need to add a mapping.
         self._check_executable()
@@ -113,37 +110,7 @@ class Env(EnvBase):
             raise WorkflowError(f"{cmd} is not available in PATH")
 
     def decorate_shellcmd(self, cmd: str) -> str:
-        # TODO pass more options here (user etc)?
-
-        options = ""
-        image_uri = self.spec.image_uri
-        workdir_option = "-w"
-        mount_option = "-v"
-        if self.settings.runtime == Runtime.APPTAINER:
-            workdir_option = "--cwd"
-            mount_option = "--bind"
-            if not re.match(r"[a-z\.]+://", image_uri):
-                image_uri = f"docker://{image_uri}"
-        else:
-            options = "--rm"
-
-        mountpoints = f" {mount_option} {str(self.tempdir)!r}:/tmp"  # always mount the temporary directory
-        for mountpoint in self.mountpoints:
-            mountpoints += f" {mount_option} {str(mountpoint)!r}:{str(mountpoint)!r}"
-        for mountpoint in self.settings.mountpoints:
-            mountpoints += f" {mount_option} {mountpoint!r}"
-
-        decorated_cmd = (
-            f"{self.settings.runtime} run"
-            f" {options}"
-            f" {workdir_option} {getcwd()!r}"  # Working directory inside container
-            f" {mountpoints}"
-            f" {image_uri}"  # Container image
-            " /bin/sh"  # Shell executable
-            f" -c {shlex.quote(cmd)}"  # The command to execute
-        )
-
-        return decorated_cmd
+        return self.runtime_manager.decorate_shellcmd(cmd)
 
     def contains_executable(self, executable: str) -> bool:
         return (
@@ -174,3 +141,61 @@ class Env(EnvBase):
         # Get container URI + hash (assuming we've already executd and fetched the image,
         # so that we can get the hash for the image plus the tag)
         return ()
+
+
+@dataclass
+class RuntimeManager:
+    env: Env
+
+    def options(self) -> str:
+        return "--rm"
+
+    def workdir_option(self) -> str:
+        return "-w"
+
+    def mount_option(self) -> str:
+        return "-v"
+
+    def image_uri(self) -> str:
+        return self.env.spec.image_uri
+
+    def mountpoints(self) -> str:
+        mountpoints = ""
+        # always mount the temporary directory
+        for source, mountpoint in [
+            (self.env.tempdir, "/tmp"),
+            (self.env.tempdir, self.env.tempdir),
+            (getcwd(), getcwd()),
+        ]:
+            mountpoints += f" {self.mount_option()} {str(source)!r}:{str(mountpoint)!r}"
+        for mountpoint in self.env.settings.mountpoints:
+            mountpoints += f" {self.mount_option()} {mountpoint!r}"
+        return mountpoints
+
+    def decorate_shellcmd(self, cmd: str) -> str:
+        mountpoints = self.mountpoints()
+        return (
+            f"{self.env.settings.runtime} run"
+            f" {self.options()}"
+            f" {self.workdir_option()} {getcwd()!r}"  # Working directory inside container
+            f" {mountpoints}"
+            f" {self.image_uri()}"  # Container image
+            " /bin/sh"  # Shell executable
+            f" -c {shlex.quote(cmd)}"  # The command to execute
+        )
+
+
+class RuntimeManagerApptainer(RuntimeManager):
+    def options(self) -> str:
+        return ""
+
+    def workdir_option(self) -> str:
+        return "--cwd"
+
+    def mount_option(self) -> str:
+        return "--bind"
+
+    def image_uri(self) -> str:
+        if re.match(r"[a-z\.]+://", super().image_uri()):
+            return super().image_uri()
+        return f"docker://{super().image_uri()}"

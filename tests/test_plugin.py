@@ -58,6 +58,16 @@ class TestApptainerContainer(TestBase):
         return Settings(runtime=Runtime.APPTAINER)
 
 
+class TestApptainerContainerWithScheme(TestBase):
+    __test__ = True  # activate automatic testing
+    test_container = "docker://alpine:latest"
+
+    def get_settings(
+        self,
+    ) -> Optional[SoftwareDeploymentSettingsBase]:
+        return Settings(runtime=Runtime.APPTAINER)
+
+
 class TestUDockerContainer(TestBase):
     __test__ = True  # activate automatic testing
 
