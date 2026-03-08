@@ -30,6 +30,10 @@ from snakemake_software_deployment_plugin_container import (
 class TestBase(TestSoftwareDeploymentBase):
     test_container = "alpine:latest"
 
+    def get_contained_executable(self) -> str:
+        # just provide something that is available inside of the container
+        return "sh"
+
     def get_env_spec(self) -> EnvSpecBase:
         # If the software deployment provider does not support deployable environments,
         # this method should return an existing environment spec that can be used
