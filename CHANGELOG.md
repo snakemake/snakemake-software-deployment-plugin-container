@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/snakemake/snakemake-software-deployment-plugin-container/compare/v0.4.0...v0.5.0) (2026-03-08)
+
+
+### Features
+
+* add apptainer support (plus various small fixes) ([#11](https://github.com/snakemake/snakemake-software-deployment-plugin-container/issues/11)) ([54a5c70](https://github.com/snakemake/snakemake-software-deployment-plugin-container/commit/54a5c70a6ca1ca9ff9b39cd16dc6a7d86ebd2df7))
+
 ## [0.4.0](https://github.com/snakemake/snakemake-software-deployment-plugin-container/compare/v0.3.0...v0.4.0) (2026-02-27)
 
 
