@@ -1,3 +1,5 @@
+import re
+
 __author__ = "ben carrillo"
 __copyright__ = "Copyright 2025, ben carrillo"
 __email__ = "ben.uzh@pm.me"
@@ -11,6 +13,7 @@ from typing import Iterable, List
 
 from snakemake_interface_software_deployment_plugins.settings import (
     SoftwareDeploymentSettingsBase,
+    CommonSettings,
 )
 from snakemake_interface_software_deployment_plugins import (
     EnvBase,
@@ -29,6 +32,7 @@ from snakemake_interface_common.settings import SettingsEnumBase
 class Runtime(SettingsEnumBase):
     UDOCKER = 0
     PODMAN = 1
+    APPTAINER = 2
 
 
 @dataclass
@@ -52,10 +56,11 @@ class Settings(SoftwareDeploymentSettingsBase):
     )
 
 
+common_settings = CommonSettings(provides="container")
+
+
 @dataclass
 class EnvSpec(EnvSpecBase):
-    # TODO: when integrating this plugin, image_uri should be populated from the container keyword (via whatever mechanism is exposing)
-    # the plugin to the software deployment registry.
     image_uri: str
 
     @classmethod
@@ -84,22 +89,19 @@ class Env(EnvBase):
 
     def __post_init__(self) -> None:
         self.check()
+        self.runtime_manager = RuntimeManager(self)
+        if self.settings.runtime == Runtime.APPTAINER:
+            self.runtime_manager = RuntimeManagerApptainer(self)
 
     # The decorator ensures that the decorated method is only called once
     # in case multiple environments of the same kind are created.
     @EnvBase.once
     def check(self) -> None:
+        # TODO: if we don't get the tag, we should assume :latest
+        # TODO: normalize tag to always use : instead of # as formerly with singularity
         self._check_service()
 
     def _check_service(self) -> None:
-        if self.spec.image_uri == "":
-            raise WorkflowError("Image URI is empty")
-
-        # TODO: if we don't get the tag, we should assume :latest
-
-        if self.settings.runtime not in Runtime.all():
-            raise WorkflowError("Invalid container kind")
-
         # this assumes that the choices are the same as the command names. If
         # this is not the case, we need to add a mapping.
         self._check_executable()
@@ -110,27 +112,7 @@ class Env(EnvBase):
             raise WorkflowError(f"{cmd} is not available in PATH")
 
     def decorate_shellcmd(self, cmd: str) -> str:
-        # TODO pass more options here (user etc)?
-
-        mountpoints = (
-            f" -v {str(self.tempdir)!r}:/tmp"  # always mount the temporary directory
-        )
-        for mountpoint in self.mountpoints:
-            mountpoints += f" -v {str(mountpoint)!r}:{str(mountpoint)!r}"
-        for mountpoint in self.settings.mountpoints:
-            mountpoints += f" -v {mountpoint!r}"
-
-        decorated_cmd = (
-            f"{self.settings.runtime} run"
-            " --rm"  # Remove container after execution
-            f" -w {getcwd()!r}"  # Working directory inside container
-            f" {mountpoints}"
-            f" {self.spec.image_uri}"  # Container image
-            " /bin/sh"  # Shell executable
-            f" -c {shlex.quote(cmd)}"  # The command to execute
-        )
-
-        return decorated_cmd
+        return self.runtime_manager.decorate_shellcmd(cmd)
 
     def contains_executable(self, executable: str) -> bool:
         return (
@@ -157,7 +139,68 @@ class Env(EnvBase):
         # hide those for clarity. In case of containers, it is also valid to
         # return the container URI as a "software".
         # Return an empty tuple () if no software can be reported.
-        # TODO: implement.
-        # Get container URI + hash (assuming we've already executd and fetched the image,
-        # so that we can get the hash for the image plus the tag)
-        return ()
+        return [SoftwareReport(name=self.spec.image_uri)]
+
+
+@dataclass
+class RuntimeManager:
+    env: Env
+
+    def options(self) -> str:
+        return "--rm"
+
+    def workdir_option(self) -> str:
+        return "-w"
+
+    def mount_option(self) -> str:
+        return "-v"
+
+    def image_uri(self) -> str:
+        return self.env.spec.image_uri
+
+    def subcommand(self) -> str:
+        return "run"
+
+    def mountpoints(self) -> str:
+        mountpoints = ""
+        # always mount the temporary directory
+        for source, mountpoint in [
+            (self.env.tempdir, "/tmp"),
+            (self.env.tempdir, self.env.tempdir),
+            (getcwd(), getcwd()),
+        ]:
+            mountpoints += f" {self.mount_option()} {str(source)!r}:{str(mountpoint)!r}"
+        for mountpoint in self.env.settings.mountpoints:
+            mountpoints += f" {self.mount_option()} {mountpoint!r}"
+        return mountpoints
+
+    def decorate_shellcmd(self, cmd: str) -> str:
+        mountpoints = self.mountpoints()
+        return (
+            f"{self.env.settings.runtime} {self.subcommand()}"
+            f" {self.options()}"
+            f" {self.workdir_option()} {getcwd()!r}"  # Working directory inside container
+            f" {mountpoints}"
+            f" {self.image_uri()}"  # Container image
+            " /bin/sh"  # Shell executable
+            f" -c {shlex.quote(cmd)}"  # The command to execute
+        )
+
+
+class RuntimeManagerApptainer(RuntimeManager):
+    def subcommand(self) -> str:
+        return "exec"
+
+    def options(self) -> str:
+        return ""
+
+    def workdir_option(self) -> str:
+        return "--cwd"
+
+    def mount_option(self) -> str:
+        return "--bind"
+
+    def image_uri(self) -> str:
+        if re.match(r"[a-z\.]+://", super().image_uri()):
+            return super().image_uri()
+        return f"docker://{super().image_uri()}"

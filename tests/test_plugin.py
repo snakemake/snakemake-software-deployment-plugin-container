@@ -30,6 +30,10 @@ from snakemake_software_deployment_plugin_container import (
 class TestBase(TestSoftwareDeploymentBase):
     test_container = "alpine:latest"
 
+    def get_contained_executable(self) -> str:
+        # just provide something that is available inside of the container
+        return "sh"
+
     def get_env_spec(self) -> EnvSpecBase:
         # If the software deployment provider does not support deployable environments,
         # this method should return an existing environment spec that can be used
@@ -47,6 +51,31 @@ class TestBase(TestSoftwareDeploymentBase):
         # Return a test command that should be executed within the environment
         # with exit code 0 (i.e. without error).
         return "/bin/true"
+
+
+class TestApptainerContainer(TestBase):
+    # TODO reactivate apptainer tests, they currently fail in CI with
+    # ERROR  : Could not write info to setgroups: Permission denied
+    # ERROR  : Error while waiting event for user namespace mappings: no event received
+    __test__ = False
+
+    def get_settings(
+        self,
+    ) -> Optional[SoftwareDeploymentSettingsBase]:
+        return Settings(runtime=Runtime.APPTAINER)
+
+
+class TestApptainerContainerWithScheme(TestBase):
+    # TODO reactivate apptainer tests, they currently fail in CI with
+    # ERROR  : Could not write info to setgroups: Permission denied
+    # ERROR  : Error while waiting event for user namespace mappings: no event received
+    __test__ = False
+    test_container = "docker://alpine:latest"
+
+    def get_settings(
+        self,
+    ) -> Optional[SoftwareDeploymentSettingsBase]:
+        return Settings(runtime=Runtime.APPTAINER)
 
 
 class TestUDockerContainer(TestBase):
