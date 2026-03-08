@@ -158,6 +158,9 @@ class RuntimeManager:
     def image_uri(self) -> str:
         return self.env.spec.image_uri
 
+    def subcommand(self) -> str:
+        return "run"
+
     def mountpoints(self) -> str:
         mountpoints = ""
         # always mount the temporary directory
@@ -174,7 +177,7 @@ class RuntimeManager:
     def decorate_shellcmd(self, cmd: str) -> str:
         mountpoints = self.mountpoints()
         return (
-            f"{self.env.settings.runtime} run"
+            f"{self.env.settings.runtime} {self.subcommand()}"
             f" {self.options()}"
             f" {self.workdir_option()} {getcwd()!r}"  # Working directory inside container
             f" {mountpoints}"
@@ -185,6 +188,9 @@ class RuntimeManager:
 
 
 class RuntimeManagerApptainer(RuntimeManager):
+    def subcommand(self) -> str:
+        return "exec"
+
     def options(self) -> str:
         return ""
 
