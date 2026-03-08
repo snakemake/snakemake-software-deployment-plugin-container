@@ -139,10 +139,9 @@ class Env(EnvBase):
         # hide those for clarity. In case of containers, it is also valid to
         # return the container URI as a "software".
         # Return an empty tuple () if no software can be reported.
-        # TODO: implement.
-        # Get container URI + hash (assuming we've already executd and fetched the image,
-        # so that we can get the hash for the image plus the tag)
-        return ()
+        return [
+            SoftwareReport(name=self.spec.image_uri)
+        ]
 
 
 @dataclass
