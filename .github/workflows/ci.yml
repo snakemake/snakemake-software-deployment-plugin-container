@@ -36,7 +36,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - run: apt-get update && apt-get install fuse2fs
+      - run: apt-get update && apt-get install fuse
 
       - name: Setup pixi
         uses: prefix-dev/setup-pixi@v0
