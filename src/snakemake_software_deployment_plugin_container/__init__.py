@@ -13,6 +13,7 @@ from typing import Iterable, List
 
 from snakemake_interface_software_deployment_plugins.settings import (
     SoftwareDeploymentSettingsBase,
+    CommonSettings,
 )
 from snakemake_interface_software_deployment_plugins import (
     EnvBase,
@@ -55,10 +56,11 @@ class Settings(SoftwareDeploymentSettingsBase):
     )
 
 
+common_settings = CommonSettings(provides="container")
+
+
 @dataclass
 class EnvSpec(EnvSpecBase):
-    # TODO: when integrating this plugin, image_uri should be populated from the container keyword (via whatever mechanism is exposing)
-    # the plugin to the software deployment registry.
     image_uri: str
 
     @classmethod
