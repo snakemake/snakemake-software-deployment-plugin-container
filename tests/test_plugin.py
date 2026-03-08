@@ -57,7 +57,7 @@ class TestApptainerContainer(TestBase):
     # TODO reactivate apptainer tests, they currently fail in CI with
     # ERROR  : Could not write info to setgroups: Permission denied
     # ERROR  : Error while waiting event for user namespace mappings: no event received
-    __test__ = True
+    __test__ = False
 
     def get_settings(
         self,
@@ -69,7 +69,7 @@ class TestApptainerContainerWithScheme(TestBase):
     # TODO reactivate apptainer tests, they currently fail in CI with
     # ERROR  : Could not write info to setgroups: Permission denied
     # ERROR  : Error while waiting event for user namespace mappings: no event received
-    __test__ = True
+    __test__ = False
     test_container = "docker://alpine:latest"
 
     def get_settings(
