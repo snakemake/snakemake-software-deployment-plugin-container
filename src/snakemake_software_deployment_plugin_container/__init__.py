@@ -59,7 +59,7 @@ class Settings(SoftwareDeploymentSettingsBase):
 common_settings = CommonSettings(provides="container")
 
 
-@dataclass
+@dataclass(eq=False)
 class EnvSpec(EnvSpecBase):
     image_uri: str
 
