@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/snakemake/snakemake-software-deployment-plugin-container/compare/v0.5.0...v0.5.1) (2026-03-09)
+
+
+### Bug Fixes
+
+* do not overwrite eq method of EnvSpec. The base class handles that. ([ded0dac](https://github.com/snakemake/snakemake-software-deployment-plugin-container/commit/ded0dacdab9363bd24abeffe9a590515a72ae62a))
+
 ## [0.5.0](https://github.com/snakemake/snakemake-software-deployment-plugin-container/compare/v0.4.0...v0.5.0) (2026-03-08)
 
 
