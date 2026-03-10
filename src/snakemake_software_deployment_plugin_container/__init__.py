@@ -5,6 +5,7 @@ __copyright__ = "Copyright 2025, ben carrillo"
 __email__ = "ben.uzh@pm.me"
 __license__ = "MIT"
 
+import os
 import shlex
 from dataclasses import dataclass, field
 from os import getcwd
@@ -33,6 +34,7 @@ class Runtime(SettingsEnumBase):
     UDOCKER = 0
     PODMAN = 1
     APPTAINER = 2
+    DOCKER = 3
 
 
 @dataclass
@@ -52,6 +54,16 @@ class Settings(SoftwareDeploymentSettingsBase):
             "nargs": "+",
             "help": "Additional mount points (format: hostpath:containerpath). "
             "Current working directory and the system tmpdir are always mounted.",
+        },
+    )
+    use_user_namespaces: bool = field(
+        default=False,
+        metadata={
+            "help": "Whether to use user namespaces (if supported by the runtime). "
+            "This can be useful to avoid permission issues, but is not always "
+            "supported. For non-docker runtimes, this is not needed. "
+            "For docker, the fallback option is to set the user and group id via "
+            "--user. This happens automatically if this flag here is not used.",
         },
     )
 
@@ -92,6 +104,8 @@ class Env(EnvBase):
         self.runtime_manager = RuntimeManager(self)
         if self.settings.runtime == Runtime.APPTAINER:
             self.runtime_manager = RuntimeManagerApptainer(self)
+        elif self.settings.runtime == Runtime.DOCKER:
+            self.runtime_manager = RuntimeManagerDocker(self)
 
     # The decorator ensures that the decorated method is only called once
     # in case multiple environments of the same kind are created.
@@ -208,3 +222,15 @@ class RuntimeManagerApptainer(RuntimeManager):
         if re.match(r"[a-z\.]+://", super().image_uri()):
             return super().image_uri()
         return f"docker://{super().image_uri()}"
+
+
+class RuntimeManagerDocker(RuntimeManager):
+    def options(self) -> str:
+        options = super().options()
+        if self.env.settings.use_user_namespaces:
+            options += " --userns keep-id"
+        else:
+            uid = os.getuid()
+            gid = os.getgid()
+            options += f" --user {uid}:{gid}"
+        return options

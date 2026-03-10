@@ -87,9 +87,12 @@ class TestUDockerContainer(TestBase):
         return Settings(runtime=Runtime.UDOCKER)
 
 
-# Helper function to check if podman is available
 def is_podman_available():
     return shutil.which("podman") is not None
+
+
+def is_docker_available():
+    return shutil.which("docker") is not None
 
 
 @pytest.mark.skipif(
@@ -98,7 +101,19 @@ def is_podman_available():
 class TestPodmanContainer(TestBase):
     __test__ = True  # activate automatic testing
 
-    def get_software_deployment_provider_settings(
+    def get_settings(
         self,
     ) -> Optional[SoftwareDeploymentSettingsBase]:
         return Settings(runtime=Runtime.PODMAN)
+
+
+@pytest.mark.skipif(
+    not is_docker_available(), reason="docker not available on the system"
+)
+class TestDockerContainer(TestBase):
+    __test__ = True  # activate automatic testing
+
+    def get_settings(
+        self,
+    ) -> Optional[SoftwareDeploymentSettingsBase]:
+        return Settings(runtime=Runtime.DOCKER)
