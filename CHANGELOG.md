@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.2](https://github.com/snakemake/snakemake-software-deployment-plugin-container/compare/v0.5.1...v0.5.2) (2026-03-10)
+
+
+### Bug Fixes
+
+* fix mount point handling ([d42e16a](https://github.com/snakemake/snakemake-software-deployment-plugin-container/commit/d42e16a8ba547897d976a3fa5b98ec9389cc4ab8))
+
 ## [0.5.1](https://github.com/snakemake/snakemake-software-deployment-plugin-container/compare/v0.5.0...v0.5.1) (2026-03-09)
 
 
