@@ -1,6 +1,6 @@
 [project]
 name = "snakemake-software-deployment-plugin-container"
-version = "0.5.2"
+version = "0.6.0"
 authors = [
     { name = "Ben Carrillo", email = "ben.uzh@pm.me" },
     { name = "Johannes Köster", email = "johannes.koester@uni-due.de" }

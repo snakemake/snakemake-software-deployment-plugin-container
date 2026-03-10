@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.6.0](https://github.com/snakemake/snakemake-software-deployment-plugin-container/compare/v0.5.2...v0.6.0) (2026-03-10)
+
+
+### Features
+
+* support for docker ([#14](https://github.com/snakemake/snakemake-software-deployment-plugin-container/issues/14)) ([1ccee66](https://github.com/snakemake/snakemake-software-deployment-plugin-container/commit/1ccee662f69a60b4a3afa300c4ec3c70da96bc6a))
+
+
+### Bug Fixes
+
+* properly handle docker:// urls for non-apptainer runtimes ([2b8323d](https://github.com/snakemake/snakemake-software-deployment-plugin-container/commit/2b8323d0a1731d75393ca9d5c1c2b362358ab6ba))
+
 ## [0.5.2](https://github.com/snakemake/snakemake-software-deployment-plugin-container/compare/v0.5.1...v0.5.2) (2026-03-10)
 
 
