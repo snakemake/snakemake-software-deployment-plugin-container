@@ -61,7 +61,9 @@ class Settings(SoftwareDeploymentSettingsBase):
         metadata={
             "help": "Whether to use user namespaces (if supported by the runtime). "
             "This can be useful to avoid permission issues, but is not always "
-            "supported.",
+            "supported. For non-docker runtimes, this is not needed. "
+            "For docker, the fallback option is to set the user and group id via "
+            "--user. This happens automatically if this flag here is not used.",
         },
     )
 
