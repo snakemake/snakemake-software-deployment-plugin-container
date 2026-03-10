@@ -175,7 +175,7 @@ class RuntimeManager:
             mountpoints += f" {self.mount_option()} {mountpoint!r}"
         return mountpoints
 
-    # TODO add TEMPDIR env vars, ensure that in addition /tmp is writable 
+    # TODO add TEMPDIR env vars, ensure that in addition /tmp is writable
     # in case it is not the same as self.tempdir
 
     def decorate_shellcmd(self, cmd: str) -> str:
