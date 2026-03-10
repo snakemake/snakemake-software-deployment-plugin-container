@@ -33,6 +33,7 @@ class Runtime(SettingsEnumBase):
     UDOCKER = 0
     PODMAN = 1
     APPTAINER = 2
+    DOCKER = 3
 
 
 @dataclass
