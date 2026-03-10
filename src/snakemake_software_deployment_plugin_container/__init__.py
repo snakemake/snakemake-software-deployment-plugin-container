@@ -161,21 +161,25 @@ class RuntimeManager:
     def subcommand(self) -> str:
         return "run"
 
-    def mountpoints(self) -> str:
-        mountpoints = ""
-        # always mount the temporary directory
-        for source, mountpoint in [
-            (self.env.tempdir, "/tmp"),
+    def get_mountpoint_args(self) -> str:
+        mountpoint_specs = [
             (self.env.tempdir, self.env.tempdir),
             (getcwd(), getcwd()),
-        ]:
+        ] + [(mountpoint, mountpoint) for mountpoint in self.env.mountpoints]
+
+        mountpoints = ""
+        # always mount the temporary directory
+        for source, mountpoint in mountpoint_specs:
             mountpoints += f" {self.mount_option()} {str(source)!r}:{str(mountpoint)!r}"
         for mountpoint in self.env.settings.mountpoints:
             mountpoints += f" {self.mount_option()} {mountpoint!r}"
         return mountpoints
 
+    # TODO add TEMPDIR env vars, ensure that in addition /tmp is writable 
+    # in case it is not the same as self.tempdir
+
     def decorate_shellcmd(self, cmd: str) -> str:
-        mountpoints = self.mountpoints()
+        mountpoints = self.get_mountpoint_args()
         return (
             f"{self.env.settings.runtime} {self.subcommand()}"
             f" {self.options()}"
