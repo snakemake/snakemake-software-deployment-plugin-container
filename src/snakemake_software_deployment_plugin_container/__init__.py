@@ -104,6 +104,8 @@ class Env(EnvBase):
         self.runtime_manager = RuntimeManager(self)
         if self.settings.runtime == Runtime.APPTAINER:
             self.runtime_manager = RuntimeManagerApptainer(self)
+        elif self.settings.runtime == Runtime.DOCKER:
+            self.runtime_manager = RuntimeManagerDocker(self)
 
     # The decorator ensures that the decorated method is only called once
     # in case multiple environments of the same kind are created.
