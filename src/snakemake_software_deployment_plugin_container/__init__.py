@@ -170,7 +170,10 @@ class RuntimeManager:
         return "-v"
 
     def image_uri(self) -> str:
-        return self.env.spec.image_uri
+        image_uri = self.env.spec.image_uri
+        if image_uri.startswith("docker://"):
+            return image_uri[9:]
+        return image_uri
 
     def subcommand(self) -> str:
         return "run"
