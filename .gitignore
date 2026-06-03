@@ -5,3 +5,8 @@ __pycache__/
 *$py.class
 *.swp
 *.swo
+
+/.coverage
+/pixi.lock
+/.zed
+coverage.xml

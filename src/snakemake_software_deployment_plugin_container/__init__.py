@@ -46,6 +46,8 @@ class Settings(SoftwareDeploymentSettingsBase):
             "env_var": False,
             "required": False,
             "choices": Runtime.choices(),
+            "parse_func": Runtime.parse_choice,
+            "unparse_func": Runtime.item_to_choice,
         },
     )
     mountpoints: List[str] = field(
@@ -106,6 +108,8 @@ class Env(EnvBase):
             self.runtime_manager = RuntimeManagerApptainer(self)
         elif self.settings.runtime == Runtime.DOCKER:
             self.runtime_manager = RuntimeManagerDocker(self)
+        elif self.settings.runtime == Runtime.UDOCKER:
+            self.runtime_manager = RuntimeManagerUdocker(self)
 
     # The decorator ensures that the decorated method is only called once
     # in case multiple environments of the same kind are created.
@@ -203,7 +207,7 @@ class RuntimeManager:
             f" {self.workdir_option()} {getcwd()!r}"  # Working directory inside container
             f" {mountpoints}"
             f" {self.image_uri()}"  # Container image
-            " /bin/sh"  # Shell executable
+            " /bin/bash"  # Shell executable
             f" -c {shlex.quote(cmd)}"  # The command to execute
         )
 
@@ -236,4 +240,11 @@ class RuntimeManagerDocker(RuntimeManager):
             uid = os.getuid()
             gid = os.getgid()
             options += f" --user {uid}:{gid}"
+        return options
+
+
+class RuntimeManagerUdocker(RuntimeManager):
+    def options(self) -> str:
+        options = super().options()
+        options += " --nobanner --env TINI_SUBREAPER=1"
         return options
