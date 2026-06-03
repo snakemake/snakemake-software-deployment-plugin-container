@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/snakemake/snakemake-software-deployment-plugin-container/compare/v0.6.0...v0.6.1) (2026-06-03)
+
+
+### Bug Fixes
+
+* add parse and unparse func for runtime argument ([e4f9a8d](https://github.com/snakemake/snakemake-software-deployment-plugin-container/commit/e4f9a8df27ea4848b46127f7f88e8045202ed489))
+
 ## [0.6.0](https://github.com/snakemake/snakemake-software-deployment-plugin-container/compare/v0.5.2...v0.6.0) (2026-03-10)
 
 
