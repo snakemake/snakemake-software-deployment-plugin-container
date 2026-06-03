@@ -28,11 +28,11 @@ from snakemake_software_deployment_plugin_container import (
 
 
 class TestBase(TestSoftwareDeploymentBase):
-    test_container = "alpine:latest"
+    test_container = "quay.io/biocontainers/samtools:1.23.1--ha83d96e_0"
 
     def get_contained_executable(self) -> str:
         # just provide something that is available inside of the container
-        return "sh"
+        return "samtools"
 
     def get_env_spec(self) -> EnvSpecBase:
         # If the software deployment provider does not support deployable environments,
@@ -50,7 +50,7 @@ class TestBase(TestSoftwareDeploymentBase):
     def get_test_cmd(self) -> str:
         # Return a test command that should be executed within the environment
         # with exit code 0 (i.e. without error).
-        return "/bin/true"
+        return "samtools --version"
 
 
 class TestApptainerContainer(TestBase):
@@ -70,7 +70,6 @@ class TestApptainerContainerWithScheme(TestBase):
     # ERROR  : Could not write info to setgroups: Permission denied
     # ERROR  : Error while waiting event for user namespace mappings: no event received
     __test__ = False
-    test_container = "docker://alpine:latest"
 
     def get_settings(
         self,
