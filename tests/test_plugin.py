@@ -57,19 +57,7 @@ class TestApptainerContainer(TestBase):
     # TODO reactivate apptainer tests, they currently fail in CI with
     # ERROR  : Could not write info to setgroups: Permission denied
     # ERROR  : Error while waiting event for user namespace mappings: no event received
-    __test__ = False
-
-    def get_settings(
-        self,
-    ) -> Optional[SoftwareDeploymentSettingsBase]:
-        return Settings(runtime=Runtime.APPTAINER)
-
-
-class TestApptainerContainerWithScheme(TestBase):
-    # TODO reactivate apptainer tests, they currently fail in CI with
-    # ERROR  : Could not write info to setgroups: Permission denied
-    # ERROR  : Error while waiting event for user namespace mappings: no event received
-    __test__ = False
+    __test__ = True
 
     def get_settings(
         self,
