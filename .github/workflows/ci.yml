@@ -41,6 +41,10 @@ jobs:
       - name: Setup pixi
         uses: prefix-dev/setup-pixi@v0
 
+      - run: |
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_unconfined=0
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
       - name: Run pytest
         run: pixi run test -v
 
