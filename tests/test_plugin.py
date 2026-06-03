@@ -21,11 +21,6 @@ from snakemake_software_deployment_plugin_container import (
     Runtime,
 )
 
-# There can be multiple subclasses of SoftwareDeploymentProviderBase here.
-# This way, you can implement multiple test scenarios.
-# For each subclass, the test suite tests the environment activation and execution
-# within, and, if applicable, environment deployment and archiving.
-
 
 class TestBase(TestSoftwareDeploymentBase):
     test_container = "quay.io/biocontainers/samtools:1.23.1--ha83d96e_0"
@@ -54,9 +49,6 @@ class TestBase(TestSoftwareDeploymentBase):
 
 
 class TestApptainerContainer(TestBase):
-    # TODO reactivate apptainer tests, they currently fail in CI with
-    # ERROR  : Could not write info to setgroups: Permission denied
-    # ERROR  : Error while waiting event for user namespace mappings: no event received
     __test__ = True
 
     def get_settings(
