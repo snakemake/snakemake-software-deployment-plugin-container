@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.2](https://github.com/snakemake/snakemake-software-deployment-plugin-container/compare/v0.6.1...v0.6.2) (2026-06-17)
+
+
+### Bug Fixes
+
+* do not use hardcoded bash path when decorating commands ([#18](https://github.com/snakemake/snakemake-software-deployment-plugin-container/issues/18)) ([394602c](https://github.com/snakemake/snakemake-software-deployment-plugin-container/commit/394602c53224f82078c3b3a4c104e66ff34503f4))
+
 ## [0.6.1](https://github.com/snakemake/snakemake-software-deployment-plugin-container/compare/v0.6.0...v0.6.1) (2026-06-03)
 
 
