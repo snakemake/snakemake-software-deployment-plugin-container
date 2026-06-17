@@ -207,7 +207,7 @@ class RuntimeManager:
             f" {self.workdir_option()} {getcwd()!r}"  # Working directory inside container
             f" {mountpoints}"
             f" {self.image_uri()}"  # Container image
-            " /bin/bash"  # Shell executable
+            " bash"  # Shell executable
             f" -c {shlex.quote(cmd)}"  # The command to execute
         )
 
