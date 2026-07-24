@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.3](https://github.com/snakemake/snakemake-software-deployment-plugin-container/compare/v0.6.2...v0.6.3) (2026-07-24)
+
+
+### Bug Fixes
+
+* use shell_executable attribute ([643d62a](https://github.com/snakemake/snakemake-software-deployment-plugin-container/commit/643d62ad24e9f61187fe870f26ee55fa13134269))
+
 ## [0.6.2](https://github.com/snakemake/snakemake-software-deployment-plugin-container/compare/v0.6.1...v0.6.2) (2026-06-17)
 
 
