@@ -1,7 +1,9 @@
+from collections.abc import Set
 from typing import Optional, Type
+import shutil
+import os
 
 import pytest
-import shutil
 
 from snakemake_interface_software_deployment_plugins.tests import (
     TestSoftwareDeploymentBase,
@@ -20,6 +22,10 @@ from snakemake_software_deployment_plugin_container import (
     Env,
     Runtime,
 )
+
+
+os.environ["TESTVAR1"] = "testvalue"
+os.environ["TESTVAR2"] = "testvalue2"
 
 
 class TestBase(TestSoftwareDeploymentBase):
@@ -46,6 +52,9 @@ class TestBase(TestSoftwareDeploymentBase):
         # Return a test command that should be executed within the environment
         # with exit code 0 (i.e. without error).
         return "samtools --version"
+
+    def get_envvars(self) -> Set[str]:
+        return {"TESTVAR1", "TESTVAR2"}
 
 
 class TestApptainerContainer(TestBase):
