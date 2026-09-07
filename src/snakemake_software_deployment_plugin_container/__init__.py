@@ -217,7 +217,11 @@ class RuntimeManagerApptainer(RuntimeManager):
         return "exec"
 
     def options(self) -> str:
-        return ""
+        options = ""
+        envvars = [f"{env_var}={os.environ[env_var]}" for env_var in self.env.envvars]
+        if envvars:
+            options += f" --env {','.join(envvars)}"
+        return options
 
     def workdir_option(self) -> str:
         return "--cwd"
@@ -240,6 +244,8 @@ class RuntimeManagerDocker(RuntimeManager):
             uid = os.getuid()
             gid = os.getgid()
             options += f" --user {uid}:{gid}"
+        for env_var in self.env.envvars:
+            options += f" --env {env_var}"
         return options
 
 
@@ -247,4 +253,6 @@ class RuntimeManagerUdocker(RuntimeManager):
     def options(self) -> str:
         options = super().options()
         options += " --nobanner --env TINI_SUBREAPER=1"
+        for env_var in self.env.envvars:
+            options += f" --env {env_var}={os.environ[env_var]}"
         return options
