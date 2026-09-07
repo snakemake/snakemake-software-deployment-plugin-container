@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1](https://github.com/snakemake/snakemake-software-deployment-plugin-container/compare/v0.7.0...v0.7.1) (2026-09-07)
+
+
+### Bug Fixes
+
+* bump twine ([6a5fcdf](https://github.com/snakemake/snakemake-software-deployment-plugin-container/commit/6a5fcdf33ff93101266551449e090f3a13d569b7))
+
 ## [0.7.0](https://github.com/snakemake/snakemake-software-deployment-plugin-container/compare/v0.6.3...v0.7.0) (2026-09-07)
 
 
