@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/snakemake/snakemake-software-deployment-plugin-container/compare/v0.6.3...v0.7.0) (2026-09-07)
+
+
+### Features
+
+* auto-pass workflow environment variables into container ([#21](https://github.com/snakemake/snakemake-software-deployment-plugin-container/issues/21)) ([3083669](https://github.com/snakemake/snakemake-software-deployment-plugin-container/commit/3083669e9e250053508099d26cfef93ec4fa8432))
+
 ## [0.6.3](https://github.com/snakemake/snakemake-software-deployment-plugin-container/compare/v0.6.2...v0.6.3) (2026-07-24)
 
 
