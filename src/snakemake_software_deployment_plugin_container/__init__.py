@@ -180,6 +180,7 @@ class Env(DeployableEnvBase, EnvBase):
         """
         deploy_cmd = self.runtime_manager.deploy_cmd()
         assert deploy_cmd is not None
+        self.deployment_path.mkdir(parents=True, exist_ok=True)
         self.run_cmd(
             deploy_cmd,
             check=True,
