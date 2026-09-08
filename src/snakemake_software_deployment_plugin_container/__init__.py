@@ -205,7 +205,7 @@ class RuntimeManager:
     env: Env
 
     def deployed_image_name(self) -> str:
-        return self.spec.image_uri.replace("/", "_").replace(":", "_").replace("#", "_")
+        return self.env.spec.image_uri.replace("/", "_").replace(":", "_").replace("#", "_")
 
     @abstractmethod
     def deployed_image_path(self) -> Path | None: ...
