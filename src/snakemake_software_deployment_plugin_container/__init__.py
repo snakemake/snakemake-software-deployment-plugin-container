@@ -94,7 +94,7 @@ class EnvSpec(EnvSpecBase):
 
 
 # All errors should be wrapped with snakemake-interface-common.errors.WorkflowError
-class Env(EnvBase, DeployableEnvBase):
+class Env(DeployableEnvBase, EnvBase):
     # image_repo is the de-referenced repository from where the image was obtained
     image_repo: str
     settings: Settings
