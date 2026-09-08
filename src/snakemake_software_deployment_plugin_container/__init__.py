@@ -1,3 +1,6 @@
+from pathlib import Path
+from abc import abstractmethod
+from snakemake_interface_software_deployment_plugins import DeployableEnvBase
 import re
 
 __author__ = "ben carrillo"
@@ -91,7 +94,7 @@ class EnvSpec(EnvSpecBase):
 
 
 # All errors should be wrapped with snakemake-interface-common.errors.WorkflowError
-class Env(EnvBase):
+class Env(EnvBase, DeployableEnvBase):
     # image_repo is the de-referenced repository from where the image was obtained
     image_repo: str
     settings: Settings
@@ -159,10 +162,56 @@ class Env(EnvBase):
         # Return an empty tuple () if no software can be reported.
         return [SoftwareReport(name=self.spec.image_uri)]
 
+    def is_deployment_path_portable(self) -> bool:
+        """Return whether the deployment path matters for the environment, i.e.
+        whether the environment is portable. If this returns False, the deployment
+        path is considered for the deployment hash. For example, conda environments are not
+        portable because they hardcode the path in binaries, while containers are
+        portable.
+        """
+        return True
+
+    async def deploy(self) -> None:
+        """Deploy the environment to self.deployment_path.
+
+        When issuing shell commands, the environment should use
+        self.run_cmd(cmd: str) in order to ensure that it runs within eventual
+        parent environments (e.g. a container or an env module).
+        """
+        deploy_cmd = self.runtime_manager.deploy_cmd()
+        assert deploy_cmd is not None
+        self.run_cmd(
+            deploy_cmd,
+            check=True,
+        )
+
+    def remove(self) -> None:
+        """Remove the deployed environment."""
+        if (
+            self.is_deployable()
+            and self.runtime_manager.deployed_image_path() is not None
+        ):
+            self.deployed_image_path.unlink(missing_ok=True)
+
+    def is_deployable(self) -> bool:
+        return (
+            self.settings.runtime is Runtime.UDOCKER
+            or self.settings.runtime is Runtime.APPTAINER
+        )
+
 
 @dataclass
 class RuntimeManager:
     env: Env
+
+    def deployed_image_name(self) -> str:
+        return self.spec.image_uri.replace("/", "_").replace(":", "_").replace("#", "_")
+
+    @abstractmethod
+    def deployed_image_path(self) -> Path | None: ...
+
+    @abstractmethod
+    def deploy_cmd(self) -> str | None: ...
 
     def options(self) -> str:
         return "--rm"
@@ -234,6 +283,12 @@ class RuntimeManagerApptainer(RuntimeManager):
             return super().image_uri()
         return f"docker://{super().image_uri()}"
 
+    def deployed_image_path(self) -> Path | None:
+        return self.env.deployment_path / self.deployed_image_name().with_suffix(".sif")
+
+    def deploy_cmd(self) -> str | None:
+        return f"apptainer pull {self.env.deployed_image_path()} {self.image_uri()}"
+
 
 class RuntimeManagerDocker(RuntimeManager):
     def options(self) -> str:
@@ -248,6 +303,13 @@ class RuntimeManagerDocker(RuntimeManager):
             options += f" --env {env_var}"
         return options
 
+    def deployed_image_path(self) -> Path | None:
+        return None
+
+    def deploy_cmd(self) -> str | None:
+        # No need to deploy anything in docker, the daemon handles that on the fly.
+        return None
+
 
 class RuntimeManagerUdocker(RuntimeManager):
     def options(self) -> str:
@@ -256,3 +318,9 @@ class RuntimeManagerUdocker(RuntimeManager):
         for env_var in self.env.envvars:
             options += f" --env {env_var}={os.environ[env_var]}"
         return options
+
+    def deployed_image_path(self) -> Path | None:
+        return None
+
+    def deploy_cmd(self) -> str | None:
+        return f"UDOCKER_DIR={self.env.deployment_path} udocker pull {self.image_uri()}"
