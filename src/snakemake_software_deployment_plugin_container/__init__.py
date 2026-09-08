@@ -288,7 +288,9 @@ class RuntimeManagerApptainer(RuntimeManager):
         return f"docker://{super().image_uri()}"
 
     def deployed_image_path(self) -> Path | None:
-        return self.env.deployment_path / self.deployed_image_name().with_suffix(".sif")
+        return (self.env.deployment_path / self.deployed_image_name()).with_suffix(
+            ".sif"
+        )
 
     def deploy_cmd(self) -> str | None:
         return f"apptainer pull {self.deployed_image_path()} {self.image_uri()}"
