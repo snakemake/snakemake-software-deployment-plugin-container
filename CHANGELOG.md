@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.2](https://github.com/snakemake/snakemake-software-deployment-plugin-container/compare/v0.7.1...v0.7.2) (2026-09-08)
+
+
+### Performance Improvements
+
+* explicit handling of deployment ([#25](https://github.com/snakemake/snakemake-software-deployment-plugin-container/issues/25)) ([127dff9](https://github.com/snakemake/snakemake-software-deployment-plugin-container/commit/127dff9b49f81a0fd55504676e1385b1dea977f7))
+
 ## [0.7.1](https://github.com/snakemake/snakemake-software-deployment-plugin-container/compare/v0.7.0...v0.7.1) (2026-09-07)
 
 
