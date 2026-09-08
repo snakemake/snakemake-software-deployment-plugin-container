@@ -191,7 +191,7 @@ class Env(DeployableEnvBase, EnvBase):
             self.is_deployable()
             and self.runtime_manager.deployed_image_path() is not None
         ):
-            self.deployed_image_path.unlink(missing_ok=True)
+            self.runtime_manager.deployed_image_path.unlink(missing_ok=True)
 
     def is_deployable(self) -> bool:
         return (
