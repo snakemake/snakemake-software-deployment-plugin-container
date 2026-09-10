@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.4](https://github.com/snakemake/snakemake-software-deployment-plugin-container/compare/v0.7.3...v0.7.4) (2026-09-10)
+
+
+### Bug Fixes
+
+* handle runtime setup (for now needed by udocker) ([78cc3ac](https://github.com/snakemake/snakemake-software-deployment-plugin-container/commit/78cc3ace79c5a6305ae2676a82d46b83f30a2347))
+
 ## [0.7.3](https://github.com/snakemake/snakemake-software-deployment-plugin-container/compare/v0.7.2...v0.7.3) (2026-09-10)
 
 
