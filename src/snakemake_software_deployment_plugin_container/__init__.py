@@ -343,7 +343,7 @@ class RuntimeManagerUdocker(RuntimeManager):
         return "udocker install"
 
     def pre_cmd(self) -> str:
-        return "UDOCKER_DIR={self.env.deployment_path}"
+        return f"UDOCKER_DIR={self.env.deployment_path}"
 
     def pre_subcommand_options(self) -> str:
         return "--quiet"
