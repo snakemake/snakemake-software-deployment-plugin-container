@@ -1,3 +1,4 @@
+from typing import ClassVar
 from pathlib import Path
 from abc import abstractmethod
 from snakemake_interface_software_deployment_plugins import DeployableEnvBase
@@ -114,6 +115,13 @@ class Env(DeployableEnvBase, EnvBase):
         elif self.settings.runtime == Runtime.UDOCKER:
             self.runtime_manager = RuntimeManagerUdocker(self)
 
+        # Handle runtime manager setup if needed.
+        # This is only done once per runtime manager type, not per environment.
+        if not self.runtime_manager.is_setup:
+            if self.runtime_manager.setup_cmd() is not None:
+                self.run_cmd(self.runtime_manager.setup_cmd(), check=True)
+            self.runtime_manager.is_setup = True
+
     # The decorator ensures that the decorated method is only called once
     # in case multiple environments of the same kind are created.
     @EnvBase.once
@@ -204,6 +212,10 @@ class Env(DeployableEnvBase, EnvBase):
 @dataclass
 class RuntimeManager:
     env: Env
+    is_setup: ClassVar[bool] = False
+
+    def setup_cmd(self) -> str | None:
+        return None
 
     def deployed_image_name(self) -> str:
         return (
@@ -324,6 +336,9 @@ class RuntimeManagerDocker(RuntimeManager):
 
 
 class RuntimeManagerUdocker(RuntimeManager):
+    def setup_cmd(self) -> str | None:
+        return "udocker install"
+
     def pre_subcommand_options(self) -> str:
         return "--quiet"
 
