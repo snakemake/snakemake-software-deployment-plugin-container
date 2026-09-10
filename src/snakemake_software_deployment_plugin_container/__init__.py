@@ -252,7 +252,7 @@ class RuntimeManagerDocker(RuntimeManager):
 class RuntimeManagerUdocker(RuntimeManager):
     def options(self) -> str:
         options = super().options()
-        options += " --nobanner --env TINI_SUBREAPER=1"
+        options += " --quiet --nobanner --env TINI_SUBREAPER=1"
         for env_var in self.env.envvars:
             options += f" --env {env_var}={os.environ[env_var]}"
         return options
