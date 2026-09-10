@@ -120,7 +120,7 @@ class Env(DeployableEnvBase, EnvBase):
         if not self.runtime_manager.is_setup:
             if self.runtime_manager.setup_cmd() is not None:
                 self.run_cmd(self.runtime_manager.setup_cmd(), check=True)
-            self.runtime_manager.is_setup = True
+            self.runtime_manager.__class__.is_setup = True
 
     # The decorator ensures that the decorated method is only called once
     # in case multiple environments of the same kind are created.
@@ -200,7 +200,7 @@ class Env(DeployableEnvBase, EnvBase):
             self.is_deployable()
             and self.runtime_manager.deployed_image_path() is not None
         ):
-            self.runtime_manager.deployed_image_path.unlink(missing_ok=True)
+            self.runtime_manager.deployed_image_path().unlink(missing_ok=True)
 
     def is_deployable(self) -> bool:
         return (
