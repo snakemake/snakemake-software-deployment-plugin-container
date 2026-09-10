@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.5](https://github.com/snakemake/snakemake-software-deployment-plugin-container/compare/v0.7.4...v0.7.5) (2026-09-10)
+
+
+### Bug Fixes
+
+* specify UDOCKER_DIR with udocker run ([59a66f4](https://github.com/snakemake/snakemake-software-deployment-plugin-container/commit/59a66f4924059ad3b3c84853d8cd7a4173b4bfb6))
+
 ## [0.7.4](https://github.com/snakemake/snakemake-software-deployment-plugin-container/compare/v0.7.3...v0.7.4) (2026-09-10)
 
 
