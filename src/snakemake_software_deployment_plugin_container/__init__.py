@@ -218,6 +218,9 @@ class RuntimeManager:
     @abstractmethod
     def deploy_cmd(self) -> str | None: ...
 
+    def pre_subcommand_options(self) -> str:
+        return ""
+
     def options(self) -> str:
         return "--rm"
 
@@ -256,7 +259,9 @@ class RuntimeManager:
     def decorate_shellcmd(self, cmd: str) -> str:
         mountpoints = self.get_mountpoint_args()
         return (
-            f"{self.env.settings.runtime} {self.subcommand()}"
+            f"{self.env.settings.runtime}"
+            f" {self.pre_subcommand_options()}"
+            f" {self.subcommand()}"
             f" {self.options()}"
             f" {self.workdir_option()} {getcwd()!r}"  # Working directory inside container
             f" {mountpoints}"
@@ -319,9 +324,12 @@ class RuntimeManagerDocker(RuntimeManager):
 
 
 class RuntimeManagerUdocker(RuntimeManager):
+    def pre_subcommand_options(self) -> str:
+        return "--quiet"
+
     def options(self) -> str:
         options = super().options()
-        options += " --quiet --nobanner --env TINI_SUBREAPER=1"
+        options += " --nobanner --env TINI_SUBREAPER=1"
         for env_var in self.env.envvars:
             options += f" --env {env_var}={os.environ[env_var]}"
         return options
