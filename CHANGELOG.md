@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.3](https://github.com/snakemake/snakemake-software-deployment-plugin-container/compare/v0.7.2...v0.7.3) (2026-09-10)
+
+
+### Bug Fixes
+
+* add quiet flag to udocker execution ([fcb5780](https://github.com/snakemake/snakemake-software-deployment-plugin-container/commit/fcb57800287a59cee68c1ec87a47d17a304ce207))
+
 ## [0.7.2](https://github.com/snakemake/snakemake-software-deployment-plugin-container/compare/v0.7.1...v0.7.2) (2026-09-08)
 
 
