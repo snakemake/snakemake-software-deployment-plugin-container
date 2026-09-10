@@ -273,8 +273,11 @@ class RuntimeManager:
 
     def decorate_shellcmd(self, cmd: str) -> str:
         mountpoints = self.get_mountpoint_args()
+        pre_cmd = self.pre_cmd()
+        if pre_cmd:
+            pre_cmd += " "
         return (
-            f"{self.pre_cmd()}{self.env.settings.runtime}"
+            f"{pre_cmd}{self.env.settings.runtime}"
             f" {self.pre_subcommand_options()}"
             f" {self.subcommand()}"
             f" {self.options()}"
