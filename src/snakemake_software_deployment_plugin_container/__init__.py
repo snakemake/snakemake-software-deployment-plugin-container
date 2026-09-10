@@ -230,6 +230,9 @@ class RuntimeManager:
     @abstractmethod
     def deploy_cmd(self) -> str | None: ...
 
+    def pre_cmd(self) -> str:
+        return ""
+
     def pre_subcommand_options(self) -> str:
         return ""
 
@@ -271,7 +274,7 @@ class RuntimeManager:
     def decorate_shellcmd(self, cmd: str) -> str:
         mountpoints = self.get_mountpoint_args()
         return (
-            f"{self.env.settings.runtime}"
+            f"{self.pre_cmd()}{self.env.settings.runtime}"
             f" {self.pre_subcommand_options()}"
             f" {self.subcommand()}"
             f" {self.options()}"
@@ -338,6 +341,9 @@ class RuntimeManagerDocker(RuntimeManager):
 class RuntimeManagerUdocker(RuntimeManager):
     def setup_cmd(self) -> str | None:
         return "udocker install"
+
+    def pre_cmd(self) -> str:
+        return "UDOCKER_DIR={self.env.deployment_path}"
 
     def pre_subcommand_options(self) -> str:
         return "--quiet"
