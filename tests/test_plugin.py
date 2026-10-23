@@ -1,4 +1,6 @@
 from collections.abc import Set
+from pathlib import Path
+from types import SimpleNamespace
 from typing import Optional, Type
 import shutil
 import os
@@ -21,6 +23,7 @@ from snakemake_software_deployment_plugin_container import (
     EnvSpec,
     Env,
     Runtime,
+    RuntimeManagerApptainer,
 )
 
 
@@ -105,3 +108,40 @@ class TestDockerContainer(TestBase):
         self,
     ) -> Optional[SoftwareDeploymentSettingsBase]:
         return Settings(runtime=Runtime.DOCKER)
+
+
+def apptainer_manager(image_uri: str) -> RuntimeManagerApptainer:
+    env = SimpleNamespace(
+        spec=SimpleNamespace(image_uri=image_uri),
+        deployment_path=Path("/deploy/abc123"),
+        settings=SimpleNamespace(runtime=Runtime.APPTAINER, mountpoints=[]),
+        tempdir=Path("/tmp/x"),
+        mountpoints=[],
+        envvars=[],
+        shell_executable=Path("/bin/bash"),
+    )
+    return RuntimeManagerApptainer(env)
+
+
+def test_apptainer_exec_uses_deployed_sif():
+    manager = apptainer_manager("python:3.12-slim")
+    sif = manager.deployed_image_path()
+    assert manager.deploy_cmd() == f"apptainer pull {sif} docker://python:3.12-slim"
+    assert f" {sif} bash -c " in manager.decorate_shellcmd("echo hi")
+
+
+def test_apptainer_sif_name_keeps_tag():
+    manager = apptainer_manager("python:3.12-slim")
+    assert manager.deployed_image_path() == Path("/deploy/abc123/python_3.12-slim.sif")
+
+
+def test_apptainer_local_sif_is_used_as_is():
+    manager = apptainer_manager("/data/img.sif")
+    assert manager.deploy_cmd() is None
+    assert " /data/img.sif bash -c " in manager.decorate_shellcmd("echo hi")
+
+
+def test_apptainer_keeps_transport():
+    manager = apptainer_manager("docker-archive:/data/img.tar")
+    sif = manager.deployed_image_path()
+    assert manager.deploy_cmd() == f"apptainer pull {sif} docker-archive:/data/img.tar"
