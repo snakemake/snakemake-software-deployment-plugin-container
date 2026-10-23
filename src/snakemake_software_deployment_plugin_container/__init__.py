@@ -203,9 +203,9 @@ class Env(DeployableEnvBase, EnvBase):
             self.runtime_manager.deployed_image_path().unlink(missing_ok=True)
 
     def is_deployable(self) -> bool:
-        return (
-            self.settings.runtime is Runtime.UDOCKER
-            or self.settings.runtime is Runtime.APPTAINER
+        return self.settings.runtime is Runtime.UDOCKER or (
+            self.settings.runtime is Runtime.APPTAINER
+            and self.runtime_manager.deploy_cmd() is not None
         )
 
 
@@ -251,6 +251,9 @@ class RuntimeManager:
             return image_uri[9:]
         return image_uri
 
+    def run_image(self) -> str:
+        return self.image_uri()
+
     def subcommand(self) -> str:
         return "run"
 
@@ -283,10 +286,15 @@ class RuntimeManager:
             f" {self.options()}"
             f" {self.workdir_option()} {getcwd()!r}"  # Working directory inside container
             f" {mountpoints}"
-            f" {self.image_uri()}"  # Container image
+            f" {self.run_image()}"  # Container image
             f" {self.env.shell_executable.name}"  # Shell executable
             f" -c {shlex.quote(cmd)}"  # The command to execute
         )
+
+
+APPTAINER_TRANSPORT = re.compile(
+    r"[a-z\.]+://|(docker-archive|docker-daemon|oci-archive|oci):"
+)
 
 
 class RuntimeManagerApptainer(RuntimeManager):
@@ -306,17 +314,29 @@ class RuntimeManagerApptainer(RuntimeManager):
     def mount_option(self) -> str:
         return "--bind"
 
-    def image_uri(self) -> str:
-        if re.match(r"[a-z\.]+://", super().image_uri()):
-            return super().image_uri()
-        return f"docker://{super().image_uri()}"
-
-    def deployed_image_path(self) -> Path | None:
-        return (self.env.deployment_path / self.deployed_image_name()).with_suffix(
-            ".sif"
+    def is_local_image(self) -> bool:
+        image_uri = self.env.spec.image_uri
+        return not APPTAINER_TRANSPORT.match(image_uri) and (
+            image_uri.endswith(".sif") or Path(image_uri).is_file()
         )
 
+    def image_uri(self) -> str:
+        image_uri = self.env.spec.image_uri
+        if APPTAINER_TRANSPORT.match(image_uri) or self.is_local_image():
+            return image_uri
+        return f"docker://{image_uri}"
+
+    def run_image(self) -> str:
+        if self.is_local_image():
+            return self.image_uri()
+        return str(self.deployed_image_path())
+
+    def deployed_image_path(self) -> Path | None:
+        return self.env.deployment_path / f"{self.deployed_image_name()}.sif"
+
     def deploy_cmd(self) -> str | None:
+        if self.is_local_image():
+            return None
         return f"apptainer pull {self.deployed_image_path()} {self.image_uri()}"
 
 
