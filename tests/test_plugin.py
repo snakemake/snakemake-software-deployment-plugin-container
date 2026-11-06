@@ -110,10 +110,10 @@ class TestDockerContainer(TestBase):
         return Settings(runtime=Runtime.DOCKER)
 
 
-def apptainer_manager(image_uri: str) -> RuntimeManagerApptainer:
+def apptainer_manager(image_uri: str, deployment_path: Path) -> RuntimeManagerApptainer:
     env = SimpleNamespace(
         spec=SimpleNamespace(image_uri=image_uri),
-        deployment_path=Path("/deploy/abc123"),
+        deployment_path=deployment_path,
         settings=SimpleNamespace(runtime=Runtime.APPTAINER, mountpoints=[]),
         tempdir=Path("/tmp/x"),
         mountpoints=[],
@@ -123,25 +123,37 @@ def apptainer_manager(image_uri: str) -> RuntimeManagerApptainer:
     return RuntimeManagerApptainer(env)
 
 
-def test_apptainer_exec_uses_deployed_sif():
-    manager = apptainer_manager("python:3.12-slim")
+def test_apptainer_exec_uses_deployed_sif(tmp_path):
+    manager = apptainer_manager("python:3.12-slim", tmp_path)
     sif = manager.deployed_image_path()
+    # the SIF name keeps the full tag
+    assert sif == tmp_path / "python_3.12-slim.sif"
+    assert manager.is_deployable()
     assert manager.deploy_cmd() == f"apptainer pull {sif} docker://python:3.12-slim"
+    assert manager.cache_asset_name() == "python_3.12-slim.sif"
+    assert (
+        manager.cache_cmd(Path("/cache/x.part"))
+        == "apptainer pull --force /cache/x.part docker://python:3.12-slim"
+    )
     assert f" {sif} bash -c " in manager.decorate_shellcmd("echo hi")
 
 
-def test_apptainer_sif_name_keeps_tag():
-    manager = apptainer_manager("python:3.12-slim")
-    assert manager.deployed_image_path() == Path("/deploy/abc123/python_3.12-slim.sif")
-
-
-def test_apptainer_local_sif_is_used_as_is():
-    manager = apptainer_manager("/data/img.sif")
-    assert manager.deploy_cmd() is None
+def test_apptainer_local_sif_is_used_as_is(tmp_path):
+    manager = apptainer_manager("/data/img.sif", tmp_path)
+    assert not manager.is_deployable()
+    assert manager.cache_asset_name() is None
     assert " /data/img.sif bash -c " in manager.decorate_shellcmd("echo hi")
 
 
-def test_apptainer_keeps_transport():
-    manager = apptainer_manager("docker-archive:/data/img.tar")
+def test_apptainer_transports(tmp_path):
+    manager = apptainer_manager("oras://registry/img:1.0", tmp_path)
+    assert manager.is_deployable()
     sif = manager.deployed_image_path()
-    assert manager.deploy_cmd() == f"apptainer pull {sif} docker-archive:/data/img.tar"
+    assert manager.deploy_cmd() == f"apptainer pull {sif} oras://registry/img:1.0"
+
+    # apptainer pull cannot fetch these, so they are run as given
+    manager = apptainer_manager("docker-archive:/data/img.tar", tmp_path)
+    assert not manager.is_deployable()
+    assert " docker-archive:/data/img.tar bash -c " in manager.decorate_shellcmd(
+        "echo hi"
+    )

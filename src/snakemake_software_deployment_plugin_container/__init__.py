@@ -1,7 +1,10 @@
 from typing import ClassVar
 from pathlib import Path
 from abc import abstractmethod
-from snakemake_interface_software_deployment_plugins import DeployableEnvBase
+from snakemake_interface_software_deployment_plugins import (
+    CacheableEnvBase,
+    DeployableEnvBase,
+)
 import re
 
 __author__ = "ben carrillo"
@@ -13,7 +16,7 @@ import os
 import shlex
 from dataclasses import dataclass, field
 from os import getcwd
-from shutil import which
+from shutil import rmtree, which
 from typing import Iterable, List
 
 from snakemake_interface_software_deployment_plugins.settings import (
@@ -95,7 +98,7 @@ class EnvSpec(EnvSpecBase):
 
 
 # All errors should be wrapped with snakemake-interface-common.errors.WorkflowError
-class Env(DeployableEnvBase, EnvBase):
+class Env(CacheableEnvBase, DeployableEnvBase, EnvBase):
     # image_repo is the de-referenced repository from where the image was obtained
     image_repo: str
     settings: Settings
@@ -186,27 +189,42 @@ class Env(DeployableEnvBase, EnvBase):
         self.run_cmd(cmd: str) in order to ensure that it runs within eventual
         parent environments (e.g. a container or an env module).
         """
+        self.deployment_path.mkdir(parents=True, exist_ok=True)
+        cached = self.cached_image_path()
+        if cached is not None and cached.exists():
+            deployed = self.runtime_manager.deployed_image_path()
+            assert deployed is not None
+            deployed.symlink_to(cached)
+            return
         deploy_cmd = self.runtime_manager.deploy_cmd()
         assert deploy_cmd is not None
-        self.deployment_path.mkdir(parents=True, exist_ok=True)
-        self.run_cmd(
-            deploy_cmd,
-            check=True,
-        )
+        self.run_cmd(deploy_cmd, check=True)
 
     def remove(self) -> None:
         """Remove the deployed environment."""
-        if (
-            self.is_deployable()
-            and self.runtime_manager.deployed_image_path() is not None
-        ):
-            self.runtime_manager.deployed_image_path().unlink(missing_ok=True)
+        if self.is_deployable():
+            rmtree(self.deployment_path)
 
     def is_deployable(self) -> bool:
-        return self.settings.runtime is Runtime.UDOCKER or (
-            self.settings.runtime is Runtime.APPTAINER
-            and self.runtime_manager.deploy_cmd() is not None
-        )
+        return self.runtime_manager.is_deployable()
+
+    def is_cacheable(self) -> bool:
+        return self.runtime_manager.cache_asset_name() is not None
+
+    def cached_image_path(self) -> Path | None:
+        asset = self.runtime_manager.cache_asset_name()
+        if asset is None:
+            return None
+        return self.cache_path / asset
+
+    async def get_cache_assets(self) -> Iterable[str]:
+        asset = self.runtime_manager.cache_asset_name()
+        return [] if asset is None else [asset]
+
+    async def cache_asset(self, asset: str, to_path: Path) -> None:
+        cache_cmd = self.runtime_manager.cache_cmd(to_path)
+        assert cache_cmd is not None
+        self.run_cmd(cache_cmd, check=True)
 
 
 @dataclass
@@ -229,6 +247,17 @@ class RuntimeManager:
 
     @abstractmethod
     def deploy_cmd(self) -> str | None: ...
+
+    def is_deployable(self) -> bool:
+        return False
+
+    def cache_asset_name(self) -> str | None:
+        """Name of the single file under the shared cache that holds the image,
+        or None if the runtime cannot store the image as one file."""
+        return None
+
+    def cache_cmd(self, to_path: Path) -> str | None:
+        return None
 
     def pre_cmd(self) -> str:
         return ""
@@ -295,6 +324,9 @@ class RuntimeManager:
 APPTAINER_TRANSPORT = re.compile(
     r"[a-z\.]+://|(docker-archive|docker-daemon|oci-archive|oci):"
 )
+# Transports that `apptainer pull` can turn into a SIF. The others (archives,
+# the docker daemon, local files) are run as given.
+APPTAINER_PULLABLE = re.compile(r"(library|docker|shub|oras|ipfs|https?)://")
 
 
 class RuntimeManagerApptainer(RuntimeManager):
@@ -314,30 +346,38 @@ class RuntimeManagerApptainer(RuntimeManager):
     def mount_option(self) -> str:
         return "--bind"
 
-    def is_local_image(self) -> bool:
-        image_uri = self.env.spec.image_uri
-        return not APPTAINER_TRANSPORT.match(image_uri) and (
-            image_uri.endswith(".sif") or Path(image_uri).is_file()
-        )
-
     def image_uri(self) -> str:
         image_uri = self.env.spec.image_uri
-        if APPTAINER_TRANSPORT.match(image_uri) or self.is_local_image():
+        if (
+            APPTAINER_TRANSPORT.match(image_uri)
+            or image_uri.endswith(".sif")
+            or Path(image_uri).is_file()
+        ):
             return image_uri
         return f"docker://{image_uri}"
 
-    def run_image(self) -> str:
-        if self.is_local_image():
-            return self.image_uri()
-        return str(self.deployed_image_path())
+    def is_deployable(self) -> bool:
+        return APPTAINER_PULLABLE.match(self.image_uri()) is not None
 
-    def deployed_image_path(self) -> Path | None:
+    def run_image(self) -> str:
+        if self.is_deployable():
+            return str(self.deployed_image_path())
+        return self.image_uri()
+
+    def deployed_image_path(self) -> Path:
         return self.env.deployment_path / f"{self.deployed_image_name()}.sif"
 
     def deploy_cmd(self) -> str | None:
-        if self.is_local_image():
-            return None
         return f"apptainer pull {self.deployed_image_path()} {self.image_uri()}"
+
+    def cache_asset_name(self) -> str | None:
+        if self.is_deployable():
+            return f"{self.deployed_image_name()}.sif"
+        return None
+
+    def cache_cmd(self, to_path: Path) -> str | None:
+        # --force because the cache mechanism pre-creates to_path as empty file.
+        return f"apptainer pull --force {to_path} {self.image_uri()}"
 
 
 class RuntimeManagerDocker(RuntimeManager):
@@ -377,6 +417,9 @@ class RuntimeManagerUdocker(RuntimeManager):
         for env_var in self.env.envvars:
             options += f" --env {env_var}={os.environ[env_var]}"
         return options
+
+    def is_deployable(self) -> bool:
+        return True
 
     def deployed_image_path(self) -> Path | None:
         return None
