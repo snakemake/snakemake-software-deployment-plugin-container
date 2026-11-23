@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.6](https://github.com/snakemake/snakemake-software-deployment-plugin-container/compare/v0.7.5...v0.7.6) (2026-11-23)
+
+
+### Bug Fixes
+
+* require snakemake-interface-common 1.24.1 for list settings ([#32](https://github.com/snakemake/snakemake-software-deployment-plugin-container/issues/32)) ([f4dffda](https://github.com/snakemake/snakemake-software-deployment-plugin-container/commit/f4dffda66051569b5fcb44a54a0e84ea2526b053))
+* run apptainer jobs from the pulled SIF and keep local images as is ([#31](https://github.com/snakemake/snakemake-software-deployment-plugin-container/issues/31)) ([7a561bd](https://github.com/snakemake/snakemake-software-deployment-plugin-container/commit/7a561bd859d44a4d23115889c499387d6223c5a7))
+
 ## [0.7.5](https://github.com/snakemake/snakemake-software-deployment-plugin-container/compare/v0.7.4...v0.7.5) (2026-09-10)
 
 
